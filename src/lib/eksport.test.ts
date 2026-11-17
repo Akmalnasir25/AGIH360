@@ -21,7 +21,7 @@ describe('eksport', () => {
     expect(satu[0].nama).toBe('Kurikulum')
     const jkPengurusan = semua[0].jk[0]
     const ajk = jkPengurusan.ahli.find((a) => a.jawatan === 'AJK')!
-    expect(ajk.nama.length).toBe(3)
+    expect(ajk.nama.length).toBe(4)
   })
 
   it('Word .docx sah & mengandungi nama guru', async () => {

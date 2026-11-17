@@ -40,7 +40,7 @@ export class StorSupabase implements Stor {
       c.from('gred').select('id,kod,peranan,faktor,susunan').eq('school_id', id).order('susunan'),
       c.from('bidang').select('id,nama,warna,susunan').eq('school_id', id).order('susunan'),
       c.from('guru').select('id,nama,emel,telefon,gred_id,masa_seminggu,kelas_peperiksaan,status,dikecualikan,tag,kepakaran').eq('school_id', id).order('nama'),
-      c.from('jawatankuasa').select('id,bidang_id,nama,tahap_id,tempoh_id,wajib,catatan,susunan,bidang_tugas').eq('school_id', id).eq('diarkib', false).order('susunan'),
+      c.from('jawatankuasa').select('id,bidang_id,kod,nama,tahap_id,tempoh_id,wajib,catatan,susunan,bidang_tugas').eq('school_id', id).eq('diarkib', false).order('susunan'),
       c.from('slot').select('id,jawatankuasa_id,peranan_id,label,susunan').eq('school_id', id).eq('diarkib', false).order('susunan'),
       c.from('lantikan').select('id,tahun,slot_id,guru_id,jk_nama,peranan_nama,bidang_nama').eq('school_id', id).gte('tahun', tahun - TAHUN_SEJARAH).lte('tahun', tahun),
       c.from('tugas_luar').select('id,guru_id,tahun,jenis,keterangan,nilai').eq('school_id', id).gte('tahun', tahun - TAHUN_SEJARAH),

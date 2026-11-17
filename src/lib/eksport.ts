@@ -3,7 +3,7 @@ import type { Sekolah } from './types'
 
 /** Struktur senarai jawatankuasa sedia untuk dieksport */
 export interface BarisAhli { jawatan: string; nama: string[] }  // nama[] > 1 bila peranan sama digabung (cth AJK)
-export interface JKEksport { no: string; nama: string; tahap: string; tempoh: string; ahli: BarisAhli[]; kosong: number; bidangTugas: string[] }
+export interface JKEksport { no: string; kod: string | null; nama: string; tahap: string; tempoh: string; ahli: BarisAhli[]; kosong: number; bidangTugas: string[] }
 export interface BidangEksport { huruf: string; nama: string; jk: JKEksport[] }
 export interface Skop { bidang?: string[]; jk?: string[] }
 export interface Pilihan { tunjukKosong: boolean; gabungPeranan: boolean }
@@ -40,7 +40,7 @@ export function kumpul(k: Konteks, skop: Skop, p: Pilihan): BidangEksport[] {
           else ahli.push({ jawatan, nama: [nama ?? KOSONG] })
         }
         return {
-          no: `${bi + 1}.${ji + 1}`, nama: j.nama, ahli, kosong,
+          no: `${bi + 1}.${ji + 1}`, kod: j.kod ?? null, nama: j.nama, ahli, kosong,
           bidangTugas: (j.bidang_tugas ?? '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean),
           tahap: d.tahap.find((t) => t.id === j.tahap_id)?.nama ?? '',
           tempoh: d.tempoh.find((t) => t.id === j.tempoh_id)?.nama ?? '',
@@ -91,7 +91,7 @@ export async function keWord(s: Sekolah, data: BidangEksport[]) {
     for (const j of b.jk) {
       anak.push(new Paragraph({
         keepNext: true, keepLines: true, spacing: { before: 240, after: 80 },
-        children: [new TextRun({ text: `${j.no}  ${j.nama}`, bold: true, size: 22 })],
+        children: [new TextRun({ text: `${j.no}  ${j.nama}${j.kod ? `  (${j.kod})` : ''}`, bold: true, size: 22 })],
       }))
       anak.push(new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
@@ -285,7 +285,7 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
     anak.push(new Paragraph({ children: [new PageBreak()] }))
     anak.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: `BAHAGIAN ${b.huruf}: ${b.nama.toUpperCase()}` })] }))
     for (const j of b.jk) {
-      anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true, keepLines: true, spacing: { before: 240, after: 80 }, children: [new TextRun({ text: `${j.no}  ${j.nama}` })] }))
+      anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true, keepLines: true, spacing: { before: 240, after: 80 }, children: [new TextRun({ text: `${j.no}  ${j.nama}${j.kod ? `  (${j.kod})` : ''}` })] }))
       anak.push(new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: j.ahli.map((a, ri) => new TableRow({

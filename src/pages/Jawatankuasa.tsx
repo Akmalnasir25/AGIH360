@@ -113,6 +113,7 @@ export default function Jawatankuasa() {
                   <div className={`text-[10px] font-bold uppercase tracking-wider ${w.teks}`}>{b?.nama}</div>
                   <h3 className="font-bold leading-snug">{j.nama}</h3>
                   <div className="mt-1.5 flex flex-wrap gap-1">
+                    {j.kod && <span className="cip bg-navy-900 text-white" title="Kod MySG">{j.kod}</span>}
                     <span className="cip bg-navy-100 text-navy-600">{peta.tahap.get(j.tahap_id)?.nama}</span>
                     <span className="cip bg-navy-100 text-navy-600">{peta.tempoh.get(j.tempoh_id)?.nama}</span>
                     {j.wajib && <span className="cip bg-emas-400/20 text-emas-600">Wajib</span>}

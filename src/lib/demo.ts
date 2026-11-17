@@ -45,7 +45,7 @@ export function binaDemo(jenis: JenisSekolah = 'SK'): DataSekolah {
     [
       ['Pengerusi', 5], ['Naib Pengerusi', 4], ['Setiausaha', 4], ['Penolong Setiausaha', 3], ['Bendahari', 3],
       ['Penyelaras', 3], ['Ketua Panitia', 4], ['Ketua Tingkatan', 3], ['Ketua Rumah', 3], ['Guru Penasihat', 2],
-      ['Jurulatih', 3], ['Warden', 3], ['Guru Kelas', 3], ['AJK', 1],
+      ['Penasihat', 2], ['Jurulatih', 3], ['Warden', 3], ['Guru Kelas', 3], ['AJK', 1],
     ] as [string, number][]
   ).map(([nama, berat], i) => ({ id: uid(), nama, berat, susunan: i + 1 }))
   const gred = (
@@ -58,18 +58,18 @@ export function binaDemo(jenis: JenisSekolah = 'SK'): DataSekolah {
   const bidang: DataSekolah['bidang'] = []
   const jawatankuasa: DataSekolah['jawatankuasa'] = []
   const slot: DataSekolah['slot'] = []
-  const t = (templat as unknown as Record<string, { bidang: { nama: string; warna: string; jk: { nama: string; tahap: string; tempoh: string; wajib: boolean; slot: [string, number][] }[] }[] }>)[jenis]
+  type JKT = { kod: string; nama: string; tahap: string; tempoh: string; wajib: boolean; slot: [string, number][]; bidang_tugas: string; syarat?: string }
+  const t = (templat as unknown as Record<string, { bidang: { nama: string; warna: string; jk: JKT[] }[] }>)[jenis]
+  const pilihanDemo = ['prasekolah', 'ppki']  // demo: sekolah ada prasekolah & PPKI
   t.bidang.forEach((b, bi) => {
     const bid = { id: uid(), nama: b.nama, warna: b.warna, susunan: bi + 1 }
     bidang.push(bid)
-    b.jk.forEach((j, ji) => {
+    b.jk.filter((j) => !j.syarat || pilihanDemo.includes(j.syarat)).forEach((j, ji) => {
       const jk = {
-        id: uid(), bidang_id: bid.id, nama: j.nama, wajib: j.wajib, catatan: null, susunan: ji + 1,
+        id: uid(), bidang_id: bid.id, kod: j.kod || null, nama: j.nama, wajib: j.wajib, catatan: null, susunan: ji + 1,
         tahap_id: tahap.find((x) => x.nama === j.tahap)!.id,
         tempoh_id: tempoh.find((x) => x.nama === j.tempoh)!.id,
-        bidang_tugas: ji === 0
-          ? 'Merancang dan menyelaras program tahunan bidang ini.\nMengadakan mesyuarat sekurang-kurangnya 3 kali setahun.\nMemantau pelaksanaan dan melaporkan kemajuan kepada pentadbir.\nMenyediakan laporan akhir tahun dan cadangan penambahbaikan.'
-          : null,
+        bidang_tugas: j.bidang_tugas,
       }
       jawatankuasa.push(jk)
       let si = 0

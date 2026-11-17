@@ -57,6 +57,8 @@ export interface Jawatankuasa {
   catatan: string | null
   susunan: number
   bidang_tugas?: string | null
+  /** Kod MySG (JR01…/JM01…) jika ada */
+  kod?: string | null
 }
 
 export interface Slot {

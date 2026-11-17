@@ -103,6 +103,16 @@ export function DaftarSekolah() {
   const kini = new Date()
   const sesiLalai = kini.getFullYear() + (kini.getMonth() >= 9 ? 1 : 0)  // Okt ke atas → rancang sesi tahun depan
   const [f, setF] = useState({ kod: '', nama: '', jenis: 'SK' as JenisSekolah, daerah: '', negeri: '', nama_ketua: '', tahun: sesiLalai })
+  const [pilihan, setPilihan] = useState<string[]>([])
+  const SYARAT: { k: string; l: string; untuk: JenisSekolah[] }[] = [
+    { k: 'prasekolah', l: 'Ada kelas prasekolah', untuk: ['SK'] },
+    { k: 'ppki', l: 'Ada Program Pendidikan Khas (PPKI)', untuk: ['SK', 'SMK'] },
+    { k: 'asrama', l: 'Ada asrama', untuk: ['SK', 'SMK'] },
+    { k: 'orang_asal', l: 'Ada murid Orang Asal', untuk: ['SK', 'SMK'] },
+    { k: 't6', l: 'Ada Tingkatan Enam', untuk: ['SMK'] },
+    { k: 'skm', l: 'Program Sijil Kemahiran Malaysia (SKM)', untuk: ['SMK'] },
+    { k: 'pima', l: 'Program Perantisan Industri (PIMA)', untuk: ['SMK'] },
+  ]
   const [sibuk, setSibuk] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
   useEffect(() => { if (!sesi && supabaseAda) nav('/log-masuk') }, [sesi, nav])
@@ -111,6 +121,7 @@ export function DaftarSekolah() {
     setSibuk(true); setRalat(null)
     const { error } = await supabase!.rpc('daftar_sekolah', {
       p_kod: f.kod, p_nama: f.nama, p_jenis: f.jenis, p_daerah: f.daerah || null, p_negeri: f.negeri || null, p_nama_ketua: f.nama_ketua || null, p_tahun: f.tahun,
+      p_pilihan: pilihan.filter((x) => SYARAT.find((y) => y.k === x)?.untuk.includes(f.jenis)),
     })
     setSibuk(false)
     if (error) return setRalat(error.message.includes('sekolah_kod_check') ? 'Format kod sekolah: 3 huruf + 4 nombor (cth. ABA1234)' : error.message)
@@ -122,7 +133,7 @@ export function DaftarSekolah() {
       {keahlian.length > 0 && <Link to="/app" className="btn-hantu -ml-3 mb-4"><ArrowLeft size={16} /> Kembali ke sistem</Link>}
       <div className="h-12 w-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center"><Building2 /></div>
       <h1 className="text-3xl font-black mt-4">Daftar sekolah</h1>
-      <p className="text-navy-500 mt-1 text-sm">Anda akan menjadi pentadbir. Senarai jawatankuasa lazim {f.jenis} dan pemberat lalai disediakan automatik.</p>
+      <p className="text-navy-500 mt-1 text-sm">Anda akan menjadi pentadbir. Senarai jawatankuasa ikut MySG ({f.jenis === 'SK' ? 'JR01–JR23' : 'JM01–JM33'}), bidang tugas dan pemberat lalai disediakan automatik.</p>
       <p className="text-xs text-navy-400 mt-3">Guru biasa tidak perlu daftar. Cukup log masuk dengan DELIMa, dan tugas anda dipaparkan selepas pentadbir memasukkan e-mel anda.</p>
       <div className="mt-6 space-y-3">
         <div className="grid grid-cols-2 gap-2 rounded-2xl bg-navy-50 p-1">
@@ -140,6 +151,15 @@ export function DaftarSekolah() {
             <select className="input" value={f.tahun} onChange={(e) => setF({ ...f, tahun: Number(e.target.value) })}>
               {[kini.getFullYear(), kini.getFullYear() + 1].map((t) => <option key={t} value={t}>{t}</option>)}
             </select></div>
+        </div>
+        <div className="rounded-2xl border border-navy-100 p-3">
+          <div className="label">Jawatankuasa ikut MySG</div>
+          <p className="text-[11px] text-navy-500 mb-2">4 JK Pengurusan Utama (wajib) dan JK standard MySG disediakan automatik. Tanda yang berkaitan dengan sekolah anda:</p>
+          <div className="grid gap-1">
+            {SYARAT.filter((x) => x.untuk.includes(f.jenis)).map((x) => (
+              <label key={x.k} className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-brand-500" checked={pilihan.includes(x.k)} onChange={(e) => setPilihan(e.target.checked ? [...pilihan, x.k] : pilihan.filter((y) => y !== x.k))} />{x.l}</label>
+            ))}
+          </div>
         </div>
         {ralat && <div className="text-sm text-rose-600">{ralat}</div>}
         <button disabled={sibuk || !f.kod || !f.nama} onClick={daftar} className="btn-utama w-full py-3">{sibuk ? 'Menyediakan sekolah…' : 'Daftar & mula'}</button>

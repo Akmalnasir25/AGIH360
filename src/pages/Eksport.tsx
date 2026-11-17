@@ -116,7 +116,7 @@ export default function Eksport() {
                 <div className="bg-[#0B1F3A] text-white font-bold px-3 py-1.5 [print-color-adjust:exact]">BAHAGIAN {b.huruf}: {b.nama.toUpperCase()}</div>
                 {b.jk.map((j) => (
                   <div key={j.no} className="mt-5 break-inside-avoid">
-                    <div className="font-bold mb-1.5">{j.no}&nbsp;&nbsp;{j.nama}</div>
+                    <div className="font-bold mb-1.5">{j.no}&nbsp;&nbsp;{j.nama}{j.kod && <span className="font-normal text-gray-500">&nbsp;&nbsp;({j.kod})</span>}</div>
                     <table className="w-full border-collapse">
                       <tbody>
                         {j.ahli.map((a, i) => (
