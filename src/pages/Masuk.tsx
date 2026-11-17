@@ -52,7 +52,7 @@ export function LogMasuk() {
   }
   const mintaKod = async () => {
     setSibuk(true); setRalat(null)
-    const { error } = await supabase!.auth.signInWithOtp({ email: emel.trim(), options: { shouldCreateUser: true } })
+    const { error } = await supabase!.auth.signInWithOtp({ email: emel.trim(), options: { shouldCreateUser: true, emailRedirectTo: `${location.origin}/log-masuk` } })
     setSibuk(false)
     if (error) setRalat(error.message); else setHantar(true)
   }
@@ -79,11 +79,11 @@ export function LogMasuk() {
           {!hantar ? (
             <div className="space-y-3">
               <div className="relative"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" /><input className="input pl-9 py-2.5" type="email" placeholder="nama@moe-dl.edu.my" value={emel} onChange={(e) => setEmel(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && mintaKod()} /></div>
-              <button disabled={!emel.includes('@') || sibuk} onClick={mintaKod} className="btn-utama w-full py-2.5">Hantar kod 6 digit</button>
+              <button disabled={!emel.includes('@') || sibuk} onClick={mintaKod} className="btn-utama w-full py-2.5">Hantar e-mel log masuk</button>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-navy-600">Kod dihantar ke <b>{emel}</b>.</p>
+              <p className="text-sm text-navy-600">E-mel dihantar ke <b>{emel}</b>. Masukkan kod 6 digit di bawah, <b>atau</b> klik pautan log masuk dalam e-mel tersebut.</p>
               <input autoFocus inputMode="numeric" maxLength={6} className="input py-3 text-center text-2xl font-mono tracking-[.5em]" placeholder="••••••" value={kod} onChange={(e) => setKod(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === 'Enter' && sahKod()} />
               <button disabled={kod.length !== 6 || sibuk} onClick={sahKod} className="btn-utama w-full py-2.5">Sahkan & masuk</button>
               <button onClick={() => { setHantar(false); setKod('') }} className="btn-hantu w-full text-xs">Tukar e-mel</button>
