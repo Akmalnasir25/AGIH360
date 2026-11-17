@@ -98,6 +98,10 @@ const { error: eJ6 } = await PK.c.from('guru').insert({ school_id: sA, nama: 'Gu
 uji('PK TIDAK boleh tambah guru', !!eJ6)
 const { error: eJ7 } = await PK.c.rpc('arkib', { p_jadual: 'jawatankuasa', p_id: jkBaru.id })
 uji('PK arkib JK dalam bidangnya', !eJ7, eJ7?.message)
+const { error: eJ8 } = await PK.c.from('tugas_luar').insert({ school_id: sA, guru_id: guruA[2].id, tahun, jenis: 'relief', keterangan: 'Relief', nilai: 2 })
+uji('PK boleh tambah tugas luar / relief', !eJ8, eJ8?.message)
+const { error: eJ9 } = await PK.c.from('tugas_luar').insert({ school_id: sB, guru_id: guruA[2].id, tahun, jenis: 'luar', nilai: 2 })
+uji('PK TIDAK boleh tambah tugas luar di sekolah lain', !!eJ9)
 
 console.log('\n▶ Kelulusan & kunci')
 const s1 = await PK.c.rpc('tukar_status', { p_school: sA, p_tahun: tahun, p_status: 'semakan' })

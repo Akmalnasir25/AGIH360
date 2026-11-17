@@ -110,6 +110,8 @@ describe('kuasa', () => {
     expect(boleh('pk', 'urus_jk', 'B2', 'B1')).toBe(false)
     expect(boleh('pk', 'urus_guru')).toBe(false)
     expect(boleh('pk', 'lulus')).toBe(false)
+    expect(boleh('pk', 'tugas_luar')).toBe(true)
+    expect(boleh('pk', 'surat')).toBe(true)
     expect(boleh('gb', 'lulus')).toBe(true)
     expect(boleh('guru', 'lihat_pengurusan')).toBe(false)
   })

@@ -6,9 +6,10 @@ import type { Konteks } from '../lib/indeks'
 import { pautanWhatsApp } from '../components/ui'
 import { teksTugas } from '../components/SejarahGuru'
 import { NotifikasiEmel } from '../components/NotifikasiEmel'
+import { boleh } from '../lib/kuasa'
 
 export default function Surat() {
-  const { k } = useAplikasi()
+  const { k, peranan } = useAplikasi()
   const [pilih, setPilih] = useState<Set<string>>(new Set())
   const [cari, setCari] = useState('')
   const [emel, setEmel] = useState(false)
@@ -21,7 +22,7 @@ export default function Surat() {
     <div>
       <TajukHalaman tajuk="Surat Lantikan" sub="Satu surat untuk setiap guru dengan Lampiran A senarai tugas. Cetak atau Simpan sebagai PDF."
         tindakan={<>
-          <button onClick={() => setEmel(true)} className="btn-garis"><Mail size={16} /> E-mel kepada guru</button>
+          {boleh(peranan, 'lulus') && <button onClick={() => setEmel(true)} className="btn-garis"><Mail size={16} /> E-mel kepada guru</button>}
           <button onClick={() => window.print()} className="btn-utama"><Printer size={16} /> Cetak {cetak.length} surat</button>
         </>} />
       {!['lulus', 'muktamad'].includes(k.data.kelulusan.status) && (

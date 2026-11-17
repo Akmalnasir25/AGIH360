@@ -4,7 +4,7 @@ import type { Peranan } from './types'
  * Semua semakan kebenaran UI melalui fungsi ini (RLS di pelayan tetap penentu sebenar).
  *  admin  — setiausaha sistem: semua
  *  gb     — Guru Besar / Pengetua: semua + lulus/muktamad
- *  pk     — Penolong Kanan: urus JK & lantik dalam bidangnya (atau semua jika tiada bidang ditetapkan)
+ *  pk     — Penolong Kanan: urus JK & lantik dalam bidangnya (atau semua jika tiada bidang ditetapkan); tugas luar & relief; surat lantikan
  *  guru   — Tugas Saya sahaja
  */
 export type Tindakan =
@@ -15,7 +15,7 @@ export function boleh(p: Peranan, t: Tindakan, bidangId?: string | null, bidangS
   if (p === 'admin' || p === 'gb') return true
   if (p === 'pk') {
     if (t === 'urus_jk' || t === 'lantik') return !bidangSaya || !bidangId || bidangSaya === bidangId
-    return ['lihat_pengurusan', 'eksport', 'hantar_semakan', 'log'].includes(t)
+    return ['lihat_pengurusan', 'eksport', 'hantar_semakan', 'log', 'tugas_luar', 'surat'].includes(t)
   }
   return false
 }
