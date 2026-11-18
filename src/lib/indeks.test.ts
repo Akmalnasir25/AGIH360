@@ -67,6 +67,25 @@ describe('indeks', () => {
   })
 })
 
+describe('masa mengajar belum diisi', () => {
+  it('masa 0 diandaikan median: guru tugas sama → indeks sama', () => {
+    const rows = [b('a', 30, 10), b('b', 0, 10), b('c', 30, 10)]
+    const r = ringkas(rows, T, 30)
+    expect(r.medianMasa).toBe(30)
+    expect(r.bilTiadaMasa).toBe(1)
+    const hb = kiraSatu(rows[1], T, r)
+    expect(hb.masaAndaian).toBe(true)
+    expect(hb.indeks).toBeCloseTo(kiraSatu(rows[0], T, r).indeks, 9)
+  })
+  it('semua masa kosong: label masih bermakna (terbeban dikesan ikut tugas)', () => {
+    const rows = [b('a', 0, 40), b('b', 0, 5), b('c', 0, 5)]
+    const r = ringkas(rows, T, 50)
+    expect(r.bilTiadaMasa).toBe(3)
+    expect(kiraSatu(rows[0], T, r).status).toBe('terbeban')
+    expect(kiraSatu(rows[1], T, r).status).not.toBe('terbeban')
+  })
+})
+
 describe('konteks demo', () => {
   it('pratonton = indeks selepas lantikan sebenar', () => {
     const d = binaDemo('SK')

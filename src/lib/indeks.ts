@@ -36,6 +36,8 @@ export interface HasilIndeks {
   status: StatusBeban
   /** Beban tugas jawatankuasa dinyatakan sebagai "setara N masa mengajar seminggu" */
   setaraMasa: number
+  /** Masa mengajar tidak diisi (0) → diandaikan sama dengan median sekolah */
+  masaAndaian: boolean
 }
 
 export interface Ringkasan {
@@ -43,6 +45,8 @@ export interface Ringkasan {
   purataJangkaan: number
   purataFaktorGred: number
   bilDikira: number
+  /** Bilangan guru dikira yang masa mengajarnya belum diisi */
+  bilTiadaMasa: number
 }
 
 export function median(nums: number[]): number {
@@ -54,10 +58,10 @@ export function median(nums: number[]): number {
 
 export function ringkas(baris: BarisIndeks[], t: Tetapan, jumlahSkorSlot: number): Ringkasan {
   const dikira = baris.filter((b) => b.dikira)
-  const masa = dikira.map((b) => masaLaras(b, t))
+  // Median hanya daripada guru yang masa mengajarnya diisi; masa 0 = "belum diisi", bukan "tidak mengajar"
+  const masa = dikira.filter((b) => b.masa > 0).map((b) => masaLaras(b, t))
   let medianMasa = median(masa)
-  if (medianMasa <= 0) medianMasa = masa.length ? masa.reduce((a, b) => a + b, 0) / masa.length : 0
-  if (medianMasa <= 0) medianMasa = 1
+  if (medianMasa <= 0) medianMasa = 1  // tiada data masa langsung → semua diandaikan setara median
 
   const skorTakDikira = baris.filter((b) => !b.dikira).reduce((a, b) => a + b.skor, 0)
   const bil = Math.max(dikira.length, 1)
@@ -67,7 +71,7 @@ export function ringkas(baris: BarisIndeks[], t: Tetapan, jumlahSkorSlot: number
   const fg = dikira.map((b) => b.faktor_gred || 1)
   const purataFaktorGred = fg.length ? fg.reduce((a, b) => a + b, 0) / fg.length : 1
 
-  return { medianMasa, purataJangkaan, purataFaktorGred, bilDikira: dikira.length }
+  return { medianMasa, purataJangkaan, purataFaktorGred, bilDikira: dikira.length, bilTiadaMasa: dikira.filter((b) => !(b.masa > 0)).length }
 }
 
 export function masaLaras(b: BarisIndeks, t: Tetapan) {
@@ -76,7 +80,9 @@ export function masaLaras(b: BarisIndeks, t: Tetapan) {
 
 export function kiraSatu(b: BarisIndeks, t: Tetapan, r: Ringkasan): HasilIndeks {
   const w = t.w_mengajar
-  const ml = masaLaras(b, t)
+  const masaAndaian = !(b.masa > 0)
+  // Masa belum diisi → andaikan guru biasa (median) supaya indeks tidak kelihatan "ringan" secara palsu
+  const ml = masaAndaian ? r.medianMasa + (b.relief ?? 0) : masaLaras(b, t)
   const gredRatio = t.guna_faktor_gred ? (b.faktor_gred || 1) / (r.purataFaktorGred || 1) : 1
   const sasaran = r.purataJangkaan * gredRatio
   const nisbahMasa = ml / r.medianMasa
@@ -89,7 +95,7 @@ export function kiraSatu(b: BarisIndeks, t: Tetapan, r: Ringkasan): HasilIndeks 
   else if (indeks < t.ambang_rendah) status = 'kurang'
   else status = 'seimbang'
   const setaraMasa = w > 0 ? ((1 - w) / w) * nisbahTugas * r.medianMasa : 0
-  return { id: b.id, masaLaras: ml, skor: b.skor, sasaran, nisbahMasa, nisbahTugas, indeks, status, setaraMasa }
+  return { id: b.id, masaLaras: ml, skor: b.skor, sasaran, nisbahMasa, nisbahTugas, indeks, status, setaraMasa, masaAndaian }
 }
 
 // ───────────────── Pembantu atas DataSekolah ─────────────────

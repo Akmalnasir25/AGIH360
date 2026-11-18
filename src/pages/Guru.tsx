@@ -64,7 +64,7 @@ export default function Guru() {
                     <tr key={g.id} className="hover:bg-navy-50/50">
                       <td className="px-4 py-2.5"><div className="flex items-center gap-2.5"><Avatar nama={g.nama} kecil /><div><div className="font-semibold">{g.nama}</div>{g.tag && <div className="text-[11px] text-navy-400">{g.tag}</div>}</div></div></td>
                       <td className="px-3 py-2.5">{g.gred_id ? gred.get(g.gred_id) : <span className="text-navy-300">—</span>}</td>
-                      <td className="px-3 py-2.5 text-center font-mono">{g.masa_seminggu}</td>
+                      <td className="px-3 py-2.5 text-center font-mono">{g.masa_seminggu > 0 ? g.masa_seminggu : <span title="Belum diisi — diandaikan median" className="cip bg-amber-100 text-amber-800">belum diisi</span>}</td>
                       <td className="px-3 py-2.5 text-center">{g.kelas_peperiksaan ? 'Ya' : ''}</td>
                       <td className="px-3 py-2.5 text-navy-500 text-xs">{g.emel ?? <span className="text-amber-600 font-semibold">tiada</span>}</td>
                       <td className="px-3 py-2.5 text-xs">{g.kepakaran && <span className="cip bg-violet-100 text-violet-700">{g.kepakaran}</span>}</td>

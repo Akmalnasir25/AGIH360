@@ -31,7 +31,11 @@ export default function Tetapan() {
           <h3 className="font-bold">Formula Indeks</h3>
           <p className="text-xs text-navy-500 mb-4">Indeks = w × nisbah mengajar + (1 − w) × nisbah tugas</p>
           <label className="label">Pemberat masa mengajar (w): {Math.round(t.w_mengajar * 100)}% mengajar · {Math.round((1 - t.w_mengajar) * 100)}% tugas</label>
-          <input type="range" min={0.3} max={0.8} step={0.05} value={t.w_mengajar} onChange={(e) => setT({ ...t, w_mengajar: Number(e.target.value) })} className="w-full accent-brand-500" />
+          <input type="range" min={0} max={0.8} step={0.05} value={t.w_mengajar} onChange={(e) => setT({ ...t, w_mengajar: Number(e.target.value) })} className="w-full accent-brand-500" />
+          <div className="flex justify-between text-[10px] text-navy-400 -mt-1">
+            <button type="button" onClick={() => setT({ ...t, w_mengajar: 0 })} className="hover:text-brand-600">0% · tugas sahaja (sistem mata)</button>
+            <button type="button" onClick={() => setT({ ...t, w_mengajar: 0.6 })} className="hover:text-brand-600">60% · lalai</button>
+          </div>
           <div className="grid grid-cols-2 gap-3 mt-4">
             <Nombor label="Ambang terbeban (>)" v={t.ambang_tinggi} set={(v) => setT({ ...t, ambang_tinggi: v })} step={0.05} />
             <Nombor label="Ambang ada ruang (<)" v={t.ambang_rendah} set={(v) => setT({ ...t, ambang_rendah: v })} step={0.05} />

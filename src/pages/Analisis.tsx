@@ -143,7 +143,7 @@ export function ProfilGuru({ guruId, tutup }: { guruId: string; tutup: () => voi
           <div className="text-xs text-navy-300 mt-1">1.00 = setara median sekolah</div>
         </div>
         <div className="sm:col-span-2 rounded-2xl border border-navy-100 p-4 font-mono text-[13px] space-y-1.5">
-          <div className="flex justify-between"><span className="text-navy-500">Masa mengajar{g.kelas_peperiksaan ? ` (×${t.faktor_peperiksaan} peperiksaan)` : ''}</span><span>{f1(h.masaLaras)} ÷ {k.ringkasan.medianMasa} = <b>{f2(h.nisbahMasa)}</b></span></div>
+          <div className="flex justify-between"><span className="text-navy-500">Masa mengajar{g.kelas_peperiksaan ? ` (×${t.faktor_peperiksaan} peperiksaan)` : ''}{h.masaAndaian && <span className="text-amber-600 font-sans text-[11px]"> · belum diisi, andaian median</span>}</span><span>{f1(h.masaLaras)} ÷ {k.ringkasan.medianMasa} = <b>{f2(h.nisbahMasa)}</b></span></div>
           <div className="flex justify-between"><span className="text-navy-500">Mata tugas ÷ sasaran{t.guna_faktor_gred && gred ? ` (gred ×${gred.faktor})` : ''}</span><span>{f1(h.skor)} ÷ {f1(h.sasaran)} = <b>{f2(h.nisbahTugas)}</b></span></div>
           <div className="h-px bg-navy-100 my-2" />
           <div className="flex justify-between"><span className="text-navy-500">{w} × {f2(h.nisbahMasa)} + {f2(1 - w)} × {f2(h.nisbahTugas)}</span><b className="text-brand-700">{f2(h.indeks)}</b></div>

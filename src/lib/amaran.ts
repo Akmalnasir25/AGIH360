@@ -25,6 +25,7 @@ export const KATEGORI: Record<string, { label: string; tahap: TahapAmaran }> = {
   A10: { label: 'Tiada e-mel DELIMa', tahap: 'info' },
   A11: { label: 'Kepakaran tidak sepadan', tahap: 'info' },
   A12: { label: 'Maklum balas guru belum dijawab', tahap: 'sederhana' },
+  A13: { label: 'Masa mengajar belum diisi', tahap: 'sederhana' },
 }
 
 export function kiraAmaran(k: Konteks): Amaran[] {
@@ -61,6 +62,7 @@ export function kiraAmaran(k: Konteks): Amaran[] {
     if (slots.length && !pernahPerananUtama(d, g.id, 3))
       tambah('A09', g.nama, 'Tiada jawatan Pengerusi/Setiausaha/Penyelaras/Ketua dalam 3 tahun — peluang pembangunan.', { guruId: g.id })
 
+    if (!(g.masa_seminggu > 0)) tambah('A13', g.nama, 'Indeks mengandaikan masa mengajar = median sekolah. Isi masa sebenar di halaman Guru.', { guruId: g.id })
     if (!g.emel) tambah('A10', g.nama, 'Tidak boleh log masuk "Tugas Saya" atau menerima e-mel lantikan.', { guruId: g.id })
   }
 

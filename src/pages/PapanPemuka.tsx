@@ -45,6 +45,12 @@ export default function PapanPemuka() {
     <div className="animate-naik">
       <TajukHalaman tajuk="Dashboard" sub={`Gambaran beban tugas ${s.dikira.length} guru · sesi ${k.data.sekolah.tahun_semasa}`}
         tindakan={<Link to="/app/jawatankuasa" className="btn-utama">Agih tugas <ArrowRight size={16} /></Link>} />
+      {k.ringkasan.bilTiadaMasa > 0 && (
+        <Link to="/app/guru" className="mb-4 flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900 hover:bg-amber-100">
+          <span className="text-lg leading-none">⚠️</span>
+          <span><b>{k.ringkasan.bilTiadaMasa} guru belum diisi masa mengajar.</b> Buat masa ini mereka diandaikan setara median sekolah{k.ringkasan.bilTiadaMasa === k.ringkasan.bilDikira ? ' (indeks dikira daripada tugas sahaja)' : ''}. Lengkapkan di halaman Guru untuk indeks yang tepat →</span>
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <KadStat warna="brand" ikon={<Scale size={16} />} label="Seimbang" nilai={s.kira('seimbang')} sub={`${seimbangPc}% daripada guru`} onClick={() => pergi('seimbang')} />
