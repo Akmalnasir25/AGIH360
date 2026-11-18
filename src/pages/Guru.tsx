@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import Papa from 'papaparse'
-import { ClipboardPaste, Pencil, Plus, Search, Trash2, Users } from 'lucide-react'
+import { ClipboardPaste, FileDown, FileUp, Pencil, Plus, Search, Trash2, Users } from 'lucide-react'
+import { bacaExcelGuru, janaTemplatGuru } from '../lib/templatGuru'
 import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
 import { Avatar, CipStatus, Kosong, Modal, f2, useSahkan } from '../components/ui'
@@ -13,6 +14,16 @@ export default function Guru() {
   const [cari, setCari] = useState('')
   const [sunting, setSunting] = useState<Partial<G> | null>(null)
   const [tampal, setTampal] = useState(false)
+  const [dariFail, setDariFail] = useState<{ nama: string; baris: string[][] } | null>(null)
+  const [ralatFail, setRalatFail] = useState<string | null>(null)
+  const failRef = useRef<HTMLInputElement>(null)
+  const pilihFail = async (f: File | undefined) => {
+    if (!f) return
+    setRalatFail(null)
+    try { const baris = await bacaExcelGuru(f); if (!baris.length) throw new Error('Tiada baris guru ditemui dalam fail.'); setDariFail({ nama: f.name, baris }); setTampal(true) }
+    catch (e) { setRalatFail((e as Error).message) }
+    if (failRef.current) failRef.current.value = ''
+  }
   const senarai = useMemo(() => (k ? k.data.guru.filter((g) => !cari || g.nama.toLowerCase().includes(cari.toLowerCase())).sort((a, b) => a.nama.localeCompare(b.nama)) : []), [k, cari])
   if (!k) return null
   const gred = new Map(k.data.gred.map((g) => [g.id, g.kod]))
@@ -21,13 +32,20 @@ export default function Guru() {
     <div className="animate-naik">
       <TajukHalaman tajuk="Guru" sub={`${k.data.guru.length} guru berdaftar · e-mel DELIMa digunakan untuk log masuk "Tugas Saya"`}
         tindakan={<>
-          <button onClick={() => setTampal(true)} className="btn-garis"><ClipboardPaste size={16} /> Tampal dari Excel</button>
+          <button onClick={() => janaTemplatGuru(k.data.sekolah, k.data.gred)} className="btn-garis"><FileDown size={16} /> Templat Excel</button>
+          <button onClick={() => failRef.current?.click()} className="btn-garis"><FileUp size={16} /> Muat naik Excel</button>
+          <input ref={failRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => void pilihFail(e.target.files?.[0])} />
+          <button onClick={() => { setDariFail(null); setTampal(true) }} className="btn-garis"><ClipboardPaste size={16} /> Tampal</button>
           <button onClick={() => setSunting({ status: 'aktif', masa_seminggu: 0, kelas_peperiksaan: false, dikecualikan: false })} className="btn-utama"><Plus size={16} /> Guru</button>
         </>} />
 
       {k.data.guru.length === 0 ? (
         <div className="kad"><Kosong ikon={<Users />} tajuk="Belum ada guru" teks="Cara paling pantas: salin lajur Nama, Gred, Masa mengajar dan E-mel dari Excel, kemudian tampal.">
-          <button onClick={() => setTampal(true)} className="btn-utama"><ClipboardPaste size={16} /> Tampal dari Excel</button>
+          <div className="flex flex-wrap justify-center gap-2">
+            <button onClick={() => janaTemplatGuru(k.data.sekolah, k.data.gred)} className="btn-garis"><FileDown size={16} /> 1. Muat turun templat Excel</button>
+            <button onClick={() => failRef.current?.click()} className="btn-utama"><FileUp size={16} /> 2. Muat naik Excel yang diisi</button>
+            <button onClick={() => { setDariFail(null); setTampal(true) }} className="btn-hantu"><ClipboardPaste size={16} /> atau tampal</button>
+          </div>
         </Kosong></div>
       ) : (
         <div className="kad overflow-hidden">
@@ -62,7 +80,8 @@ export default function Guru() {
         </div>
       )}
       {sunting && <SuntingGuru g={sunting} tutup={() => setSunting(null)} />}
-      {tampal && <TampalGuru tutup={() => setTampal(false)} />}
+      {ralatFail && <div className="fixed bottom-4 right-4 z-50 rounded-2xl bg-rose-600 text-white p-4 text-sm shadow-pop">{ralatFail} <button className="ml-3 underline" onClick={() => setRalatFail(null)}>Tutup</button></div>}
+      {tampal && <TampalGuru awal={dariFail} tutup={() => { setTampal(false); setDariFail(null) }} />}
     </div>
   )
 }
@@ -128,14 +147,14 @@ function padanGred(teks: string, gred: Gred[]): string | null {
     ?? (n <= 9 || n === 41 ? gred.find((g) => /DG9/i.test(g.kod))?.id ?? null : null)
 }
 
-function TampalGuru({ tutup }: { tutup: () => void }) {
+function TampalGuru({ tutup, awal }: { tutup: () => void; awal?: { nama: string; baris: string[][] } | null }) {
   const { k, ubah } = useAplikasi()
   const [teks, setTeks] = useState('')
   const [sibuk, setSibuk] = useState(false)
   const baris = useMemo(() => {
-    if (!k || !teks.trim()) return []
-    const r = Papa.parse<string[]>(teks.trim(), { delimiter: teks.includes('\t') ? '\t' : '', skipEmptyLines: true })
-    return r.data
+    if (!k || (!awal && !teks.trim())) return []
+    const mentah = awal ? awal.baris : Papa.parse<string[]>(teks.trim(), { delimiter: teks.includes('\t') ? '\t' : '', skipEmptyLines: true }).data
+    return mentah
       .filter((row) => row[0] && !/^nama$/i.test(row[0].trim()))
       .map((row) => {
         const [nama, gred = '', masa = '', pep = '', emel = '', tag = '', kepakaran = '', telefon = ''] = row.map((c) => (c ?? '').trim())
@@ -145,7 +164,7 @@ function TampalGuru({ tutup }: { tutup: () => void }) {
           tag: tag || null, dikecualikan: KECUALI.test(tag), kepakaran: kepakaran || null, telefon: telefon || null,
         }
       })
-  }, [teks, k])
+  }, [teks, k, awal])
   if (!k) return null
   const sedia = new Set(k.data.guru.map((g) => g.nama.toLowerCase()))
   const simpan = async () => {
@@ -159,11 +178,13 @@ function TampalGuru({ tutup }: { tutup: () => void }) {
     } finally { setSibuk(false) }
   }
   return (
-    <Modal buka tutup={tutup} tajuk="Tampal senarai guru dari Excel" lebar="max-w-3xl"
-      sub="Susunan lajur: Nama · Gred · Masa mengajar seminggu · Kelas peperiksaan (Ya/Tidak) · E-mel · Jawatan · Kepakaran · Telefon">
-      <textarea autoFocus value={teks} onChange={(e) => setTeks(e.target.value)} rows={7}
-        placeholder={'Pn. Siti Aminah binti Hassan\tDG10\t26\tTidak\tsiti@moe-dl.edu.my\nEn. Mohd Faizal bin Rahman\tDG12\t24\tYa\tfaizal@moe-dl.edu.my\tGKMP'}
-        className="input font-mono text-xs" />
+    <Modal buka tutup={tutup} tajuk={awal ? 'Semak data dari fail Excel' : 'Tampal senarai guru dari Excel'} lebar="max-w-3xl"
+      sub={awal ? `Fail: ${awal.nama} — semak pratonton, kemudian tekan Import.` : 'Susunan lajur: Nama · Gred · Masa mengajar seminggu · Kelas peperiksaan (Ya/Tidak) · E-mel · Jawatan · Kepakaran · Telefon'}>
+      {!awal && (
+        <textarea autoFocus value={teks} onChange={(e) => setTeks(e.target.value)} rows={7}
+          placeholder={'Pn. Siti Aminah binti Hassan\tDG10\t26\tTidak\tsiti@moe-dl.edu.my\nEn. Mohd Faizal bin Rahman\tDG12\t24\tYa\tfaizal@moe-dl.edu.my\tGKMP'}
+          className="input font-mono text-xs" />
+      )}
       {baris.length > 0 && (
         <div className="mt-4">
           <div className="text-sm font-semibold mb-2">{baris.length} baris dikesan · {baris.filter((b) => sedia.has(b.nama.toLowerCase())).length} sudah wujud (diabaikan)</div>
