@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Building2, Clock, Mail, PauseCircle, RefreshCw, Sparkles } from 'lucide-react'
+import { ArrowLeft, Building2, Clock, Mail, PauseCircle, RefreshCw } from 'lucide-react'
 import { useAplikasi, type Keahlian } from '../context/Aplikasi'
 import { Logo } from '../components/ui'
 import { supabase, supabaseAda } from '../lib/supabase'
@@ -92,7 +92,7 @@ export function LogMasuk() {
           {ralat && <div className="mt-3 text-sm text-rose-600">{ralat}</div>}
         </>
       )}
-      <button onClick={() => { mulaDemo('SK'); nav('/app') }} className="mt-8 w-full rounded-2xl border border-dashed border-emas-400 bg-emas-400/5 p-3 text-sm font-semibold text-emas-600 hover:bg-emas-400/10 flex items-center justify-center gap-2"><Sparkles size={16} /> Cuba demo tanpa log masuk</button>
+      <div className="mt-10 text-center"><button onClick={() => { mulaDemo('SK'); nav('/app') }} className="text-[10px] text-navy-300 hover:text-navy-500 hover:underline">demo</button></div>
     </Bingkai>
   )
 }
