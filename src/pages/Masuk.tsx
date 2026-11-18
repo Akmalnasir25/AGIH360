@@ -30,7 +30,7 @@ function Bingkai({ children }: { children: React.ReactNode }) {
 }
 
 export function LogMasuk() {
-  const { sesi, keahlian, keahlianSedia, mulaDemo, pemilik } = useAplikasi()
+  const { sesi, keahlian, keahlianSedia, pemilik } = useAplikasi()
   const nav = useNavigate()
   const [emel, setEmel] = useState('')
   const [kod, setKod] = useState('')
@@ -92,7 +92,6 @@ export function LogMasuk() {
           {ralat && <div className="mt-3 text-sm text-rose-600">{ralat}</div>}
         </>
       )}
-      <div className="mt-10 text-center"><button onClick={() => { mulaDemo('SK'); nav('/app') }} className="text-[10px] text-navy-300 hover:text-navy-500 hover:underline">demo</button></div>
     </Bingkai>
   )
 }
