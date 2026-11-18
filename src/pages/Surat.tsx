@@ -114,7 +114,7 @@ export function SatuSurat({ k, guruId, mod, butiran }: { k: Konteks; guruId: str
   return (
     <div className="relative overflow-hidden bg-white shadow-card print:shadow-none rounded-2xl print:rounded-none px-10 py-8 sm:px-14 sm:py-10 text-[13px] leading-relaxed text-black page-break font-[Arial,sans-serif]">
       {draf && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><span className="text-[120px] font-black text-rose-500/10 -rotate-[30deg] [print-color-adjust:exact]">DRAF</span></div>}
-      <KepalaSurat s={s} mod={mod ?? (s.kepala_surat ? 'imej' : 'logo')} />
+      <KepalaSurat s={s} mod={mod ?? 'logo'} />
       <table className="mt-4 ml-auto"><tbody>
         <tr><td className="pr-2 whitespace-nowrap align-top">Rujukan Kami</td><td className="align-top">: {bt.rujukan}</td></tr>
         <tr><td className="pr-2 whitespace-nowrap align-top">Tarikh</td><td className="align-top">: {tarikhPanjang(bt.tarikh)}</td></tr>

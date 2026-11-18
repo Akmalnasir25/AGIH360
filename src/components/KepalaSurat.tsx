@@ -11,7 +11,7 @@ export function useModKepala(s: Sekolah): [ModKepala, (m: ModKepala) => void] {
     let m: string | null = null
     try { m = localStorage.getItem(KUNCI) } catch { /* storan disekat */ }
     if (m === 'kosong' || m === 'logo' || (m === 'imej' && s.kepala_surat)) return m
-    return s.kepala_surat ? 'imej' : 'logo'
+    return 'logo'
   })
   const set = (m: ModKepala) => { setMod(m); try { localStorage.setItem(KUNCI, m) } catch { /* abaikan */ } }
   // Jika imej kepala surat dibuang, jatuh balik ke logo
@@ -20,8 +20,8 @@ export function useModKepala(s: Sekolah): [ModKepala, (m: ModKepala) => void] {
 
 export function PilihKepala({ mod, set, s }: { mod: ModKepala; set: (m: ModKepala) => void; s: Sekolah }) {
   const pilihan: [ModKepala, string, string][] = [
-    ['imej', 'Kepala surat', s.kepala_surat ? 'Imej kepala surat rasmi sekolah' : 'Muat naik di Tetapan dahulu'],
     ['logo', 'Format KPM', 'Jata Negara + KPM + maklumat sekolah + logo sekolah (dijana automatik)'],
+    ['imej', 'Imej kepala surat', s.kepala_surat ? 'Imej kepala surat penuh yang dimuat naik' : 'Muat naik di Tetapan dahulu'],
     ['kosong', 'Kosong', 'Ruang kosong — untuk kertas yang sudah bercetak kepala surat'],
   ]
   return (

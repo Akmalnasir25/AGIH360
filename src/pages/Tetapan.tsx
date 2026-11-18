@@ -60,7 +60,7 @@ export default function Tetapan() {
           <div className="mt-5 pt-4 border-t border-navy-100 space-y-4">
             <div className="text-xs text-navy-500">Untuk cetakan <b>Surat Lantikan</b> &amp; <b>Senarai AJK</b>. Tekan <b>Simpan tetapan</b> selepas memuat naik.</div>
             <MuatImej label="Logo sekolah" nota="PNG/JPG segi empat. Dipapar di sebelah nama sekolah." nilai={s.logo_url} set={(v) => setS({ ...s, logo_url: v })} lebar={400} jenis="image/png" had={550000} kelas="h-20 w-20 object-contain" />
-            <MuatImej label="Kepala surat (imej penuh)" nota="Imbas / eksport kepala surat rasmi sebagai imej melintang (cth. 2000×400 px)." nilai={s.kepala_surat ?? null} set={(v) => setS({ ...s, kepala_surat: v })} lebar={2000} jenis="image/jpeg" had={1400000} kelas="w-full max-h-28 object-contain object-left" />
+            <MuatImej label="Imej kepala surat penuh (pilihan)" nota="Hanya jika sekolah ada kepala surat siap (imej melintang, cth. 2000×400 px). Tidak perlu jika guna mod Format KPM — Jata Negara & logo sekolah dijana automatik." nilai={s.kepala_surat ?? null} set={(v) => setS({ ...s, kepala_surat: v })} lebar={2000} jenis="image/jpeg" had={1400000} kelas="w-full max-h-28 object-contain object-left" melintang />
           </div>
         </div>
 
@@ -148,9 +148,10 @@ function Pengguna() {
   )
 }
 
-function MuatImej({ label, nota, nilai, set, lebar, jenis, had, kelas }: {
-  label: string; nota: string; nilai: string | null; set: (v: string | null) => void; lebar: number; jenis: 'image/png' | 'image/jpeg'; had: number; kelas: string
+function MuatImej({ label, nota, nilai, set, lebar, jenis, had, kelas, melintang }: {
+  label: string; nota: string; nilai: string | null; set: (v: string | null) => void; lebar: number; jenis: 'image/png' | 'image/jpeg'; had: number; kelas: string; melintang?: boolean
 }) {
+  const [nisbah, setNisbah] = useState<number | null>(null)
   const [ralat, setRalat] = useState<string | null>(null)
   const [sibuk, setSibuk] = useState(false)
   const pilih = async (f?: File) => {
@@ -162,7 +163,7 @@ function MuatImej({ label, nota, nilai, set, lebar, jenis, had, kelas }: {
     <div>
       <label className="label">{label}</label>
       <div className="rounded-xl border border-dashed border-navy-200 p-3">
-        {nilai ? <img src={nilai} alt={label} className={kelas} /> : <div className="text-xs text-navy-400 py-3 text-center">Belum dimuat naik</div>}
+        {nilai ? <img src={nilai} alt={label} className={kelas} onLoad={(e) => setNisbah(e.currentTarget.naturalWidth / Math.max(1, e.currentTarget.naturalHeight))} /> : <div className="text-xs text-navy-400 py-3 text-center">Belum dimuat naik</div>}
         <div className="mt-2 flex items-center gap-2">
           <label className="btn-garis py-1.5 text-xs cursor-pointer"><ImagePlus size={14} /> {sibuk ? 'Memproses…' : nilai ? 'Tukar' : 'Muat naik'}
             <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => { void pilih(e.target.files?.[0]); e.target.value = '' }} /></label>
@@ -170,6 +171,7 @@ function MuatImej({ label, nota, nilai, set, lebar, jenis, had, kelas }: {
         </div>
         <p className="text-[11px] text-navy-400 mt-1.5">{nota}</p>
         {ralat && <p className="text-xs text-rose-600 mt-1">{ralat}</p>}
+        {melintang && nilai && nisbah !== null && nisbah < 3 && <p className="text-xs text-amber-700 mt-1 font-semibold">Imej ini tidak melintang — ia akan nampak sangat besar di atas surat. Kepala surat penuh biasanya 4–6 kali lebih lebar daripada tingginya. Jika ini logo, buang dan guna mod "Format KPM" sahaja.</p>}
       </div>
     </div>
   )
