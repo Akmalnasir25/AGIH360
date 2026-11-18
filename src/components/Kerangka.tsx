@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
-  AlertTriangle, BarChart3, ClipboardCheck, Dumbbell, FileDown, FileText, FlaskConical, LayoutDashboard, LogOut, Menu,
+  AlertTriangle, BarChart3, ShieldCheck, ClipboardCheck, Dumbbell, FileDown, FileText, FlaskConical, LayoutDashboard, LogOut, Menu,
   Network, Settings, Sparkles, UserRound, Users, X,
 } from 'lucide-react'
 import { useAplikasi } from '../context/Aplikasi'
@@ -26,7 +26,7 @@ const MENU: { ke: string; label: string; ikon: typeof Users; perlu: Tindakan | n
 ]
 
 export function Kerangka() {
-  const { data, k, peranan, bidangSaya, stor, keluar, keluarDemo, tukarPerananDemo, keahlian, pilihSekolah, sesi, simulasi, ralat, tutupRalat } = useAplikasi()
+  const { data, k, peranan, bidangSaya, stor, keluar, keluarDemo, tukarPerananDemo, keahlian, pilihSekolah, sesi, simulasi, ralat, tutupRalat, pemilik } = useAplikasi()
   const [buka, setBuka] = useState(false)
   const nav = useNavigate()
   const demo = stor?.mod === 'demo' || (simulasi && !sesi)
@@ -62,6 +62,11 @@ export function Kerangka() {
             {m.lencana === 'amaran' && bilAmaran > 0 && <span className="rounded-full bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5">{bilAmaran}</span>}
           </NavLink>
         ))}
+        {pemilik && !demo && (
+          <NavLink to="/pemilik" className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-emas-300 border border-emas-400/30 hover:bg-emas-400/10">
+            <ShieldCheck size={17} /> Panel Pemilik
+          </NavLink>
+        )}
       </nav>
       {demo && (
         <div className="mx-4 mb-3 rounded-2xl bg-emas-400/10 border border-emas-400/30 p-3">

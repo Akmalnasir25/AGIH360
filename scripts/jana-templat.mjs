@@ -1,4 +1,4 @@
-// Sumber tunggal templat JK NeracaTugas, diselaraskan dengan MySG (Malaysian School Governance, KPM).
+// Sumber tunggal templat JK AGIH360, diselaraskan dengan MySG (Malaysian School Governance, KPM).
 // Jana: node scripts/jana-templat.mjs  →  src/lib/templat.json  +  supabase/migrations/<ts>_templat_mysg.sql
 // Bidang tugas ditulis semula secara ringkas (bukan salinan teks MySG). Rujuk dokumen MySG rasmi untuk perincian penuh.
 import { writeFileSync } from 'node:fs'
@@ -155,7 +155,7 @@ const templat = { SK, SMK }
 writeFileSync(new URL('../src/lib/templat.json', import.meta.url), JSON.stringify(templat))
 
 // Jana fungsi SQL _templat(jenis) daripada JSON yang sama
-const sql = `-- NeracaTugas 006: templat JK diselaraskan dengan MySG (kod JR/JM), bidang tugas, JK bersyarat.
+const sql = `-- AGIH360 006: templat JK diselaraskan dengan MySG (kod JR/JM), bidang tugas, JK bersyarat.
 -- DIJANA oleh scripts/jana-templat.mjs — jangan sunting tangan.
 
 alter table public.jawatankuasa add column if not exists kod text;

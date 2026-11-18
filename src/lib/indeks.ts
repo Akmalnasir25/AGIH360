@@ -1,7 +1,7 @@
 import type { DataSekolah, Slot, Tetapan } from './types'
 
 /**
- * Enjin Indeks Beban NeracaTugas
+ * Enjin Indeks Beban AGIH360
  *
  *   Skor tugas  = Σ (faktor tahap JK × berat peranan × faktor tempoh)
  *   Masa        = masa mengajar seminggu × (faktor peperiksaan jika kelas peperiksaan)

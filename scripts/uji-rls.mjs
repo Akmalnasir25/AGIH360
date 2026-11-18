@@ -1,4 +1,4 @@
-// Ujian pengasingan data (RLS) NeracaTugas terhadap Supabase TEMPATAN.
+// Ujian pengasingan data (RLS) AGIH360 terhadap Supabase TEMPATAN.
 // Jalankan: node scripts/uji-rls.mjs   (perlu `supabase start`; guna kunci demo tempatan sahaja)
 import { createClient } from '@supabase/supabase-js'
 
@@ -30,6 +30,24 @@ console.log('\n▶ Sediakan dua sekolah')
 const { data: sA, error: eA } = await A.c.rpc('daftar_sekolah', { p_kod: kod('AAA'), p_nama: 'SK Ujian A', p_jenis: 'SK' })
 const { data: sB, error: eB } = await B.c.rpc('daftar_sekolah', { p_kod: kod('BBB'), p_nama: 'SMK Ujian B', p_jenis: 'SMK' })
 uji('daftar sekolah A & B', sA && sB, eA?.message ?? eB?.message)
+
+console.log('\n▶ Kelulusan pemilik')
+const P = await pengguna('pemilik')
+await admin.from('pemilik').insert({ emel: P.email })
+const stA = (await A.c.from('sekolah').select('status').eq('id', sA).single()).data
+uji('sekolah baharu berstatus menunggu & admin boleh lihat statusnya', stA?.status === 'menunggu')
+const { error: ePend } = await A.c.from('guru').insert({ school_id: sA, nama: 'Cuba Awal' })
+uji('sekolah menunggu: admin TIDAK boleh tambah guru', !!ePend)
+const { error: eBukanPemilik } = await A.c.rpc('pemilik_tukar_status', { p_school: sA, p_status: 'aktif' })
+uji('bukan pemilik TIDAK boleh luluskan sekolah', !!eBukanPemilik)
+uji('bukan pemilik: senarai pemilik kosong', ((await A.c.rpc('pemilik_senarai')).data ?? []).length === 0)
+const senarai = (await P.c.rpc('pemilik_senarai')).data ?? []
+uji('pemilik nampak permohonan A & B', [sA, sB].every((id) => senarai.some((s) => s.id === id && s.status === 'menunggu')))
+const l1 = await P.c.rpc('pemilik_tukar_status', { p_school: sA, p_status: 'aktif' })
+const l2 = await P.c.rpc('pemilik_tukar_status', { p_school: sB, p_status: 'aktif' })
+uji('pemilik luluskan A & B', !l1.error && !l2.error, l1.error?.message ?? l2.error?.message)
+uji('pemilik bukan ahli sekolah: TIDAK nampak guru', ((await P.c.from('guru').select('id').eq('school_id', sA)).data ?? []).length === 0)
+
 const tahun = (await A.c.from('sekolah').select('tahun_semasa').eq('id', sA).single()).data.tahun_semasa
 const bidangA = (await A.c.from('bidang').select('id,nama').eq('school_id', sA)).data
 const kur = bidangA.find((b) => b.nama === 'Kurikulum').id, pent = bidangA.find((b) => b.nama === 'Pentadbiran').id
@@ -142,6 +160,27 @@ await A.c.rpc('tetapkan_peranan', { p_school: sA, p_emel: GB.email, p_peranan: '
 const s5 = await GB.c.rpc('tukar_status', { p_school: sA, p_tahun: tahun, p_status: 'lulus' })
 uji('GB boleh luluskan', !s5.error, s5.error?.message)
 uji('GB nampak semua guru sekolahnya', ((await GB.c.from('guru').select('id').eq('school_id', sA)).data ?? []).length === 3)
+
+console.log('\n▶ Pemilik: gantung, cipta sekolah & jemput admin')
+await P.c.rpc('pemilik_tukar_status', { p_school: sA, p_status: 'digantung', p_catatan: 'ujian' })
+const { error: eGantung } = await A.c.from('guru').insert({ school_id: sA, nama: 'Semasa Digantung' })
+uji('sekolah digantung: admin TIDAK boleh tulis', !!eGantung)
+uji('sekolah digantung: guru TIDAK nampak data', ((await G.c.from('lantikan').select('id')).data ?? []).length === 0)
+await P.c.rpc('pemilik_tukar_status', { p_school: sA, p_status: 'aktif' })
+uji('aktif semula: guru nampak lantikan sendiri', ((await G.c.from('lantikan').select('id')).data ?? []).length > 0)
+const emelBaru = `adminbaru.${run}@moe-dl.edu.my`
+const rc = await P.c.rpc('pemilik_cipta_sekolah', { p_kod: kod('CCC'), p_nama: 'SK Ujian C', p_jenis: 'SK', p_emel_admin: emelBaru })
+uji('pemilik cipta sekolah → admin dijemput', rc.data === 'dijemput', rc.error?.message ?? rc.data)
+await admin.auth.admin.createUser({ email: emelBaru, password: KATA, email_confirm: true })
+const C = createClient(URL, ANON, { auth: { persistSession: false } })
+await C.auth.signInWithPassword({ email: emelBaru, password: KATA })
+await C.rpc('tuntut_akaun')
+const sC = (await C.from('ahli').select('school_id,peranan')).data ?? []
+uji('admin jemputan jadi admin selepas log masuk', sC.length === 1 && sC[0].peranan === 'admin')
+const { error: eC } = await C.from('guru').insert({ school_id: sC[0]?.school_id, nama: 'Guru C' })
+uji('sekolah ciptaan pemilik terus aktif', !eC, eC?.message)
+const { error: eCipta } = await A.c.rpc('pemilik_cipta_sekolah', { p_kod: kod('DDD'), p_nama: 'Haram', p_jenis: 'SK', p_emel_admin: 'x@y.my' })
+uji('bukan pemilik TIDAK boleh cipta sekolah', !!eCipta)
 
 console.log(`\n${gagal ? '❌' : '✅'} ${lulus} lulus, ${gagal} gagal\n`)
 process.exit(gagal ? 1 : 0)

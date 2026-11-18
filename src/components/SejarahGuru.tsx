@@ -47,6 +47,6 @@ export function teksTugas(k: Konteks, guruId: string) {
     `Senarai tugas anda bagi sesi ${d.sekolah.tahun_semasa} di ${d.sekolah.nama}:`,
     ...baris,
     '',
-    'Surat lantikan rasmi boleh dimuat turun di NeracaTugas → "Tugas Saya". Terima kasih atas komitmen cikgu.',
+    'Surat lantikan rasmi boleh dimuat turun di AGIH360 → "Tugas Saya". Terima kasih atas komitmen cikgu.',
   ].join('\n')
 }

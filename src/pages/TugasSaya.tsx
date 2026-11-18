@@ -77,7 +77,7 @@ export default function TugasSaya() {
           <tr><td className="pr-4 py-0.5">Dijana</td><td>: {new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>
         </tbody></table>
         <div className="mt-6"><SejarahGuru guruId={g.id} cetak /></div>
-        <p className="mt-8 text-[11px] text-gray-500">Dijana oleh NeracaTugas daripada rekod lantikan rasmi sekolah. Sesuai dilampirkan sebagai bukti sumbangan (PBPPP / kenaikan pangkat).</p>
+        <p className="mt-8 text-[11px] text-gray-500">Dijana oleh AGIH360 daripada rekod lantikan rasmi sekolah. Sesuai dilampirkan sebagai bukti sumbangan (PBPPP / kenaikan pangkat).</p>
       </div>
     </div>
   )

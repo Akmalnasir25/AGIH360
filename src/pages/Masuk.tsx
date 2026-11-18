@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Building2, Mail, Sparkles } from 'lucide-react'
-import { useAplikasi } from '../context/Aplikasi'
+import { ArrowLeft, Building2, Clock, Mail, PauseCircle, RefreshCw, Sparkles } from 'lucide-react'
+import { useAplikasi, type Keahlian } from '../context/Aplikasi'
 import { Logo } from '../components/ui'
 import { supabase, supabaseAda } from '../lib/supabase'
 import type { JenisSekolah } from '../lib/types'
@@ -21,7 +21,7 @@ function Bingkai({ children }: { children: React.ReactNode }) {
       </div>
       <div className="flex items-center justify-center p-6 bg-white">
         <div className="w-full max-w-sm">
-          <Link to="/" className="lg:hidden mb-8 inline-block"><Logo /></Link>
+          <Link to="/" className="lg:hidden mb-6 inline-block"><img src="/logo-penuh.png" alt="AGIH360" className="h-28 w-28 object-contain" /></Link>
           {children}
         </div>
       </div>
@@ -30,7 +30,7 @@ function Bingkai({ children }: { children: React.ReactNode }) {
 }
 
 export function LogMasuk() {
-  const { sesi, keahlian, keahlianSedia, mulaDemo } = useAplikasi()
+  const { sesi, keahlian, keahlianSedia, mulaDemo, pemilik } = useAplikasi()
   const nav = useNavigate()
   const [emel, setEmel] = useState('')
   const [kod, setKod] = useState('')
@@ -39,8 +39,8 @@ export function LogMasuk() {
   const [ralat, setRalat] = useState<string | null>(null)
 
   useEffect(() => {
-    if (sesi && keahlianSedia) nav(keahlian.length ? '/app' : '/daftar', { replace: true })
-  }, [sesi, keahlian, keahlianSedia, nav])
+    if (sesi && keahlianSedia) nav(keahlian.length ? '/app' : pemilik ? '/pemilik' : '/daftar', { replace: true })
+  }, [sesi, keahlian, keahlianSedia, pemilik, nav])
 
   const google = async () => {
     setRalat(null)
@@ -102,7 +102,7 @@ export function DaftarSekolah() {
   const nav = useNavigate()
   const kini = new Date()
   const sesiLalai = kini.getFullYear() + (kini.getMonth() >= 9 ? 1 : 0)  // Okt ke atas → rancang sesi tahun depan
-  const [f, setF] = useState({ kod: '', nama: '', jenis: 'SK' as JenisSekolah, daerah: '', negeri: '', nama_ketua: '', tahun: sesiLalai })
+  const [f, setF] = useState({ kod: '', nama: '', jenis: 'SK' as JenisSekolah, daerah: '', negeri: '', nama_ketua: '', telefon: '', tahun: sesiLalai })
   const [pilihan, setPilihan] = useState<string[]>([])
   const SYARAT: { k: string; l: string; untuk: JenisSekolah[] }[] = [
     { k: 'prasekolah', l: 'Ada kelas prasekolah', untuk: ['SK'] },
@@ -120,7 +120,7 @@ export function DaftarSekolah() {
   const daftar = async () => {
     setSibuk(true); setRalat(null)
     const { error } = await supabase!.rpc('daftar_sekolah', {
-      p_kod: f.kod, p_nama: f.nama, p_jenis: f.jenis, p_daerah: f.daerah || null, p_negeri: f.negeri || null, p_nama_ketua: f.nama_ketua || null, p_tahun: f.tahun,
+      p_kod: f.kod, p_nama: f.nama, p_jenis: f.jenis, p_daerah: f.daerah || null, p_negeri: f.negeri || null, p_nama_ketua: f.nama_ketua || null, p_tahun: f.tahun, p_telefon: f.telefon || null,
       p_pilihan: pilihan.filter((x) => SYARAT.find((y) => y.k === x)?.untuk.includes(f.jenis)),
     })
     setSibuk(false)
@@ -161,9 +161,34 @@ export function DaftarSekolah() {
             ))}
           </div>
         </div>
+        <div><label className="label">No. telefon untuk dihubungi</label><input className="input" placeholder="012-3456789" value={f.telefon} onChange={(e) => setF({ ...f, telefon: e.target.value })} /></div>
+        <p className="text-[11px] text-navy-500">Permohonan akan disemak oleh pemilik AGIH360. Anda boleh mula guna sebaik diluluskan.</p>
         {ralat && <div className="text-sm text-rose-600">{ralat}</div>}
-        <button disabled={sibuk || !f.kod || !f.nama} onClick={daftar} className="btn-utama w-full py-3">{sibuk ? 'Menyediakan sekolah…' : 'Daftar & mula'}</button>
+        <button disabled={sibuk || !f.kod || !f.nama} onClick={daftar} className="btn-utama w-full py-3">{sibuk ? 'Menghantar…' : 'Hantar permohonan'}</button>
         {sesi && <button onClick={async () => { await keluar(); nav('/') }} className="btn-hantu w-full text-xs">Log keluar ({sesi.user.email})</button>}
+      </div>
+    </Bingkai>
+  )
+}
+
+/** Skrin bagi sekolah yang menunggu kelulusan atau digantung */
+export function SekolahTidakAktif({ kh }: { kh: Keahlian }) {
+  const { keahlian, pilihSekolah, keluar, muatKeahlian, sesi } = useAplikasi()
+  const nav = useNavigate()
+  const menunggu = kh.status === 'menunggu'
+  const lain = keahlian.filter((x) => x.school_id !== kh.school_id)
+  return (
+    <Bingkai>
+      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${menunggu ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>{menunggu ? <Clock /> : <PauseCircle />}</div>
+      <h1 className="text-3xl font-black mt-4">{menunggu ? 'Menunggu kelulusan' : 'Akaun sekolah digantung'}</h1>
+      <p className="text-navy-600 mt-2 text-sm"><b>{kh.nama}</b> ({kh.kod})</p>
+      <p className="text-navy-500 mt-3 text-sm">{menunggu
+        ? 'Permohonan anda telah diterima dan sedang disemak oleh pemilik AGIH360. Anda akan boleh menggunakan sistem sebaik diluluskan. Semak semula sebentar lagi.'
+        : 'Akses sekolah ini digantung buat sementara. Data tidak dipadam. Sila hubungi pemilik AGIH360 untuk maklumat lanjut.'}</p>
+      <div className="mt-6 space-y-2">
+        <button onClick={async () => { await muatKeahlian(); location.reload() }} className="btn-utama w-full"><RefreshCw size={15} /> Semak semula status</button>
+        {lain.map((x) => <button key={x.school_id} onClick={() => pilihSekolah(x.school_id)} className="btn-garis w-full">Buka {x.nama}</button>)}
+        <button onClick={async () => { await keluar(); nav('/') }} className="btn-hantu w-full text-xs">Log keluar ({sesi?.user.email})</button>
       </div>
     </Bingkai>
   )

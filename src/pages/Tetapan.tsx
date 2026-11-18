@@ -104,7 +104,7 @@ function JadualPemberat({ tajuk, jadual, baris, medan, namaMedan = 'nama' }: {
 
 function Pengguna() {
   const { k } = useAplikasi()
-  const [ahli, setAhli] = useState<{ user_id: string; emel: string; peranan: string; bidang_id: string | null }[]>([])
+  const [ahli, setAhli] = useState<{ user_id: string | null; emel: string; peranan: string; bidang_id: string | null; dijemput: boolean }[]>([])
   const [emel, setEmel] = useState('')
   const [p, setP] = useState('pk')
   const [bidang, setBidang] = useState('')
@@ -115,13 +115,14 @@ function Pengguna() {
   if (!k || !supabase) return null
   const tambah = async () => {
     const r = await supabase!.rpc('tetapkan_peranan', { p_school: id, p_emel: emel, p_peranan: p, p_bidang: bidang || null })
-    setMesej(r.error ? r.error.message : r.data === 'belum_log_masuk' ? 'Pengguna ini belum pernah log masuk. Minta dia log masuk sekali dahulu.' : 'Peranan dikemas kini.')
+    setMesej(r.error ? r.error.message : r.data === 'dijemput' ? `${emel} dijemput — peranan aktif sebaik dia log masuk kali pertama.` : 'Peranan dikemas kini.')
+    if (!r.error) setEmel('')
     void muat()
   }
   return (
     <div className="kad p-5 mt-5">
       <h3 className="font-bold flex items-center gap-2"><UserCog size={18} /> Pengguna & Peranan</h3>
-      <p className="text-xs text-navy-500 mb-4">Guru dipautkan automatik melalui e-mel DELIMa. Di sini anda tetapkan GB/Pengetua (lulus & muktamad), PK (urus JK & lantik dalam bidangnya) atau Admin.</p>
+      <p className="text-xs text-navy-500 mb-4">Guru dipautkan automatik melalui e-mel dalam senarai Guru. Peranan boleh ditetapkan walaupun orang itu belum pernah log masuk — ia aktif sebaik dia log masuk. Di sini anda tetapkan GB/Pengetua (lulus & muktamad), PK (urus JK & lantik dalam bidangnya) atau Admin.</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input className="input" placeholder="e-mel@moe-dl.edu.my" value={emel} onChange={(e) => setEmel(e.target.value)} />
         <select className="input sm:w-32" value={p} onChange={(e) => setP(e.target.value)}><option value="gb">GB / Pengetua</option><option value="pk">PK</option><option value="admin">Admin</option><option value="guru">Guru</option></select>
@@ -130,7 +131,7 @@ function Pengguna() {
       </div>
       {mesej && <div className="text-sm mt-2 text-navy-600">{mesej}</div>}
       <div className="mt-4 divide-y divide-navy-100">
-        {ahli.map((a) => <div key={a.user_id} className="flex justify-between py-2 text-sm"><span>{a.emel}</span><span className="cip bg-navy-100 text-navy-700 uppercase">{a.peranan}{a.bidang_id ? ` · ${k.data.bidang.find((b) => b.id === a.bidang_id)?.nama}` : ''}</span></div>)}
+        {ahli.map((a) => <div key={a.emel} className="flex justify-between py-2 text-sm"><span>{a.emel}{a.dijemput && <span className="cip bg-amber-100 text-amber-800 ml-2">dijemput · belum log masuk</span>}</span><span className="cip bg-navy-100 text-navy-700 uppercase">{a.peranan}{a.bidang_id ? ` · ${k.data.bidang.find((b) => b.id === a.bidang_id)?.nama}` : ''}</span></div>)}
       </div>
     </div>
   )

@@ -15,16 +15,19 @@ import TugasSaya from './pages/TugasSaya'
 import Amaran from './pages/Amaran'
 import TugasLuar from './pages/TugasLuar'
 import Kelulusan from './pages/Kelulusan'
+import PanelPemilik from './pages/PanelPemilik'
+import { SekolahTidakAktif } from './pages/Masuk'
 import { boleh, type Tindakan } from './lib/kuasa'
 
 function Dilindungi() {
-  const { sedia, sesi, stor, data, keahlian, keahlianSedia, memuat, ralat } = useAplikasi()
+  const { sedia, sesi, stor, data, keahlian, keahlianSedia, memuat, ralat, pemilik, sekolahTidakAktif } = useAplikasi()
   // Demo & simulasi (termasuk simulasi daripada demo) tidak memerlukan sesi
   if (stor && stor.mod !== 'live') return data ? <Kerangka /> : <Memuat />
   if (!sedia) return <Memuat />
   if (!sesi) return <Navigate to="/log-masuk" replace />
   if (!keahlianSedia) return <Memuat />
-  if (!keahlian.length && !stor) return <Navigate to="/daftar" replace />
+  if (!keahlian.length && !stor) return <Navigate to={pemilik ? '/pemilik' : '/daftar'} replace />
+  if (sekolahTidakAktif) return <SekolahTidakAktif kh={sekolahTidakAktif} />
   if (ralat && !data) return <div className="p-10 text-rose-600">{ralat}</div>
   if (!data || memuat && !data) return <Memuat />
   return <Kerangka />
@@ -33,6 +36,13 @@ function Dilindungi() {
 function Hanya({ t, children }: { t: Tindakan; children: React.ReactNode }) {
   const { peranan } = useAplikasi()
   return boleh(peranan, t) ? <>{children}</> : <Navigate to="/app/tugas-saya" replace />
+}
+
+function LaluanPemilik() {
+  const { sedia, sesi, keahlianSedia, pemilik } = useAplikasi()
+  if (!sedia || (sesi && !keahlianSedia)) return <Memuat />
+  if (!sesi) return <Navigate to="/log-masuk" replace />
+  return pemilik ? <PanelPemilik /> : <Navigate to="/app" replace />
 }
 
 function Memuat() {
@@ -47,6 +57,7 @@ export default function App() {
           <Route path="/" element={<Utama />} />
           <Route path="/log-masuk" element={<LogMasuk />} />
           <Route path="/daftar" element={<DaftarSekolah />} />
+          <Route path="/pemilik" element={<LaluanPemilik />} />
           <Route path="/app" element={<Dilindungi />}>
             <Route index element={<Hanya t="lihat_pengurusan"><PapanPemuka /></Hanya>} />
             <Route path="jawatankuasa" element={<Hanya t="lihat_pengurusan"><Jawatankuasa /></Hanya>} />

@@ -136,7 +136,7 @@ export function binaDemo(jenis: JenisSekolah = 'SK'): DataSekolah {
   return {
     sekolah: {
       id: school_id, kod: jenis === 'SK' ? 'ABA0001' : 'ABA1001',
-      nama: jenis === 'SK' ? 'SK Contoh Seri Neraca' : 'SMK Contoh Seri Neraca',
+      nama: jenis === 'SK' ? 'SK Contoh Seri Harmoni' : 'SMK Contoh Seri Harmoni',
       jenis, alamat: 'Jalan Pendidikan, 31650 Ipoh', daerah: 'Kinta Utara', negeri: 'Perak', logo_url: null,
       nama_ketua: guru[0].nama, jawatan_ketua: jenis === 'SK' ? 'Guru Besar' : 'Pengetua', tahun_semasa: tahun,
     },
@@ -175,7 +175,7 @@ export class StorDemo implements Stor {
       throw new Error(`Agihan telah ${this.d.kelulusan.status}. Buka semula sebagai draf untuk mengubah.`)
   }
   private log(tindakan: string, butiran: string) {
-    this.d.log.unshift({ id: ++logSeq, masa: new Date().toISOString(), pengguna: this.mod === 'simulasi' ? 'simulasi' : 'demo@neracatugas', tindakan, butiran })
+    this.d.log.unshift({ id: ++logSeq, masa: new Date().toISOString(), pengguna: this.mod === 'simulasi' ? 'simulasi' : 'demo@agih360', tindakan, butiran })
   }
   private strukturSahaja() {
     if (this.mod === 'simulasi') throw new Error('Mod simulasi hanya membenarkan perubahan lantikan.')

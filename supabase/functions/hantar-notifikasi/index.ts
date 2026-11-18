@@ -1,4 +1,4 @@
-// NeracaTugas — Edge Function: e-mel notifikasi lantikan kepada guru (Brevo).
+// AGIH360 — Edge Function: e-mel notifikasi lantikan kepada guru (Brevo).
 // POST { school_id, cuba: boolean }
 //  cuba = true  → dry-run: kira penerima sahaja, tiada e-mel dihantar
 //  cuba = false → hantar (perlu BREVO_API_KEY & EMEL_PENGHANTAR dalam secrets)
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     if (cuba) return json({ akan_dihantar: penerima.length, tanpa_emel: tanpa, brevo_sedia })
     if (!brevo_sedia) return json({ ralat: 'Brevo belum dikonfigurasi', akan_dihantar: penerima.length, tanpa_emel: tanpa, brevo_sedia }, 400)
 
-    const laman = Deno.env.get('URL_LAMAN') ?? 'https://neracatugas.akmalsys.com'
+    const laman = Deno.env.get('URL_LAMAN') ?? 'https://agih360.akmalsys.com'
     let dihantar = 0, gagal = 0
     for (const g of penerima) {
       const senarai = ikut.get(g.id)!.map((x, i) => `<tr><td style="padding:4px 8px;border:1px solid #ddd">${i + 1}</td><td style="padding:4px 8px;border:1px solid #ddd">${esc(x.jk)}</td><td style="padding:4px 8px;border:1px solid #ddd">${esc(x.p)}</td></tr>`).join('')
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
         <p>Salam sejahtera ${esc(g.nama)},</p>
         <p>Berikut ialah senarai tugas anda bagi sesi <b>${sek!.tahun_semasa}</b> di <b>${esc(sek!.nama)}</b>:</p>
         <table style="border-collapse:collapse">${senarai}</table>
-        <p>Surat lantikan rasmi boleh dimuat turun di <a href="${laman}/app/tugas-saya">NeracaTugas → Tugas Saya</a> (log masuk dengan DELIMa).</p>
+        <p>Surat lantikan rasmi boleh dimuat turun di <a href="${laman}/app/tugas-saya">AGIH360 → Tugas Saya</a> (log masuk dengan DELIMa).</p>
         <p>Terima kasih atas komitmen anda.</p></div>`
       const r = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',

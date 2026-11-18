@@ -118,7 +118,7 @@ export async function keWord(s: Sekolah, data: BidangEksport[]) {
   })
 
   const doc = new Document({
-    creator: 'NeracaTugas', title: tajukDokumen(s, data),
+    creator: 'AGIH360', title: tajukDokumen(s, data),
     styles: { default: { document: { run: { font: 'Arial', size: 20 } } } },
     sections: [{
       properties: { page: { margin: { top: 1000, bottom: 1000, left: 1100, right: 1100 } } },
@@ -132,7 +132,7 @@ export async function keWord(s: Sekolah, data: BidangEksport[]) {
 export async function keExcel(s: Sekolah, data: BidangEksport[], k: Konteks) {
   const E = (await import('exceljs')).default
   const wb = new E.Workbook()
-  wb.creator = 'NeracaTugas'
+  wb.creator = 'AGIH360'
   const NAVY = 'FF0B1F3A', KELABU = 'FFEEF2F7'
   const sempadan = { style: 'thin' as const, color: { argb: 'FFB9C7DB' } }
   const kotak = { top: sempadan, bottom: sempadan, left: sempadan, right: sempadan }
@@ -306,7 +306,7 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
   })
 
   const doc = new Document({
-    creator: 'NeracaTugas', title: `Buku Pengurusan ${s.nama} ${s.tahun_semasa}`,
+    creator: 'AGIH360', title: `Buku Pengurusan ${s.nama} ${s.tahun_semasa}`,
     features: { updateFields: true },
     styles: {
       default: { document: { run: { font: 'Arial', size: 20 } } },

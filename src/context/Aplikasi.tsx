@@ -7,7 +7,8 @@ import { binaKonteks, type Konteks } from '../lib/indeks'
 import type { Stor } from '../lib/stor'
 import type { DataSekolah, JenisSekolah, Peranan } from '../lib/types'
 
-export interface Keahlian { school_id: string; peranan: Peranan; bidang_id: string | null; guru_id: string | null; nama: string; kod: string }
+export type StatusSekolah = 'menunggu' | 'aktif' | 'digantung'
+export interface Keahlian { school_id: string; peranan: Peranan; bidang_id: string | null; guru_id: string | null; nama: string; kod: string; status: StatusSekolah }
 
 interface NilaiAplikasi {
   sesi: Session | null
@@ -16,6 +17,10 @@ interface NilaiAplikasi {
   /** true selepas keahlian pengguna log masuk selesai dimuat (elak lencongan pramatang) */
   keahlianSedia: boolean
   muatKeahlian: () => Promise<void>
+  /** Pemilik platform AGIH360 (boleh buka Panel Pemilik) */
+  pemilik: boolean
+  /** Sekolah dipilih tetapi belum aktif (menunggu kelulusan / digantung) */
+  sekolahTidakAktif: Keahlian | null
   // sekolah aktif
   stor: Stor | null
   data: DataSekolah | null
@@ -57,6 +62,8 @@ export function PembekalAplikasi({ children }: { children: ReactNode }) {
   const [memuat, setMemuat] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
   const [simulasi, setSimulasi] = useState<{ asal: Stor; dataAsal: DataSekolah } | null>(null)
+  const [pemilik, setPemilik] = useState(false)
+  const [sekolahTidakAktif, setSekolahTidakAktif] = useState<Keahlian | null>(null)
 
   // ── Sesi Supabase
   useEffect(() => {
@@ -67,15 +74,17 @@ export function PembekalAplikasi({ children }: { children: ReactNode }) {
   }, [])
 
   const muatKeahlian = useCallback(async () => {
-    if (!supabase || !sesi) { setKeahlian([]); setKeahlianUntuk(null); return }
-    await supabase.rpc('tuntut_akaun')  // padankan e-mel DELIMa dengan rekod guru
+    if (!supabase || !sesi) { setKeahlian([]); setKeahlianUntuk(null); setPemilik(false); return }
+    await supabase.rpc('tuntut_akaun')  // padankan e-mel DELIMa dengan rekod guru + tebus jemputan
+    const { data: p } = await supabase.rpc('saya_pemilik')
+    setPemilik(p === true)
     const { data: rows } = await supabase
       .from('ahli')
-      .select('school_id,peranan,bidang_id,guru_id,sekolah(nama,kod)')
+      .select('school_id,peranan,bidang_id,guru_id,sekolah(nama,kod,status)')
       .eq('user_id', sesi.user.id)
     const k = (rows ?? []).map((r) => {
-      const s = r.sekolah as unknown as { nama: string; kod: string }
-      return { school_id: r.school_id, peranan: r.peranan as Peranan, bidang_id: r.bidang_id, guru_id: r.guru_id, nama: s?.nama ?? '', kod: s?.kod ?? '' }
+      const s = r.sekolah as unknown as { nama: string; kod: string; status: StatusSekolah }
+      return { school_id: r.school_id, peranan: r.peranan as Peranan, bidang_id: r.bidang_id, guru_id: r.guru_id, nama: s?.nama ?? '', kod: s?.kod ?? '', status: s?.status ?? 'menunggu' }
     })
     setKeahlian(k)
     setKeahlianUntuk(sesi.user.id)
@@ -88,7 +97,7 @@ export function PembekalAplikasi({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (stor?.mod === 'demo' || !keahlian.length) return
     const simpan = localStorageGet(KUNCI_SEKOLAH)
-    const pilih = keahlian.find((x) => x.school_id === simpan) ?? keahlian[0]
+    const pilih = keahlian.find((x) => x.school_id === simpan) ?? keahlian.find((x) => x.status === 'aktif') ?? keahlian[0]
     if (!stor) pilihSekolahDalam(pilih)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keahlian])
@@ -99,6 +108,9 @@ export function PembekalAplikasi({ children }: { children: ReactNode }) {
   }, [])
 
   function pilihSekolahDalam(kh: Keahlian) {
+    localStorageSet(KUNCI_SEKOLAH, kh.school_id)
+    if (kh.status !== 'aktif') { setStor(null); setData(null); setSekolahTidakAktif(kh); return }
+    setSekolahTidakAktif(null)
     const s = new StorSupabase(kh.school_id)
     setStor(s); setPeranan(kh.peranan); setGuruSaya(kh.guru_id); setBidangSaya(kh.bidang_id)
     localStorageSet(KUNCI_SEKOLAH, kh.school_id)
@@ -154,7 +166,7 @@ export function PembekalAplikasi({ children }: { children: ReactNode }) {
   }, [stor])
 
   const keluar = async () => {
-    setStor(null); setData(null); setKeahlian([]); setSimulasi(null)
+    setStor(null); setData(null); setKeahlian([]); setSimulasi(null); setSekolahTidakAktif(null); setPemilik(false)
     if (supabase) await supabase.auth.signOut()
   }
 
@@ -162,7 +174,7 @@ export function PembekalAplikasi({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider value={{
-      sesi, sedia, keahlian, keahlianSedia, muatKeahlian, stor, data, k, peranan, guruSaya, bidangSaya, memuat, ralat,
+      sesi, sedia, keahlian, keahlianSedia, muatKeahlian, pemilik, sekolahTidakAktif, stor, data, k, peranan, guruSaya, bidangSaya, memuat, ralat,
       pilihSekolah, mulaDemo, keluarDemo, tukarPerananDemo, muatSemula, ubah, keluar,
       simulasi: simulasi ? { dataAsal: simulasi.dataAsal } : null, mulaSimulasi, terapkanSimulasi, buangSimulasi,
       tutupRalat: () => setRalat(null),

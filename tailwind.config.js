@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Zamrud NeracaTugas: tindakan utama
+        // Zamrud AGIH360: tindakan utama
         brand: {
           50: '#ECFDF6', 100: '#D1FAE8', 200: '#A6F2D3', 300: '#6CE4B9', 400: '#33CD9A',
           500: '#10B483', 600: '#06926B', 700: '#077558', 800: '#0A5D48', 900: '#0A4C3C',

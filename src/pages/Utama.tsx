@@ -34,7 +34,7 @@ export default function Utama() {
               <span className="bg-gradient-to-r from-brand-300 via-brand-400 to-emas-400 bg-clip-text text-transparent">tanpa agak-agak.</span>
             </h1>
             <p className="mt-5 text-lg text-navy-200 max-w-lg">
-              "Cikgu tu dah banyak kerja" — banyak berbanding siapa? NeracaTugas menimbang setiap jawatan dan masa mengajar,
+              "Cikgu tu dah banyak kerja" — banyak berbanding siapa? AGIH360 menimbang setiap jawatan dan masa mengajar,
               lalu memberi satu angka yang adil untuk setiap guru.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -87,9 +87,9 @@ export default function Utama() {
       {/* MASALAH */}
       <section className="max-w-6xl mx-auto px-5 py-20">
         <div className="text-center max-w-2xl mx-auto">
-          <div className="text-brand-600 font-bold text-sm uppercase tracking-widest">Kenapa NeracaTugas</div>
+          <div className="text-brand-600 font-bold text-sm uppercase tracking-widest">Kenapa AGIH360</div>
           <h2 className="text-3xl sm:text-4xl font-black mt-2">"Dia kan senior. Dia kan muda. Dia kan rajin."</h2>
-          <p className="text-navy-500 mt-3">Tanpa sedar, nama yang sama keluar lagi dan lagi. Guru yang bekerja senyap jarang dikira. NeracaTugas menukar perasaan kepada angka yang boleh dirujuk dalam mesyuarat.</p>
+          <p className="text-navy-500 mt-3">Tanpa sedar, nama yang sama keluar lagi dan lagi. Guru yang bekerja senyap jarang dikira. AGIH360 menukar perasaan kepada angka yang boleh dirujuk dalam mesyuarat.</p>
         </div>
         <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[
@@ -164,7 +164,7 @@ export default function Utama() {
       </section>
 
       <footer className="border-t border-navy-100 py-8 text-center text-sm text-navy-400">
-        <div className="flex justify-center"><Logo kecil /></div> <div className="mt-3">© {new Date().getFullYear()} NeracaTugas · Dibina oleh guru, untuk guru.</div>
+        <div className="flex justify-center"><img src="/logo-penuh.png" alt="AGIH360" className="h-24 w-24 object-contain" /></div> <div className="mt-3">© {new Date().getFullYear()} AGIH360 · Dibina oleh guru, untuk guru.</div>
       </footer>
     </div>
   )

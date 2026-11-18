@@ -1,4 +1,4 @@
-# NeracaTugas
+# AGIH360
 
 Sistem agihan & pemberatan tugas guru untuk SK dan SMK — Indeks Beban, auto-agih, aliran kelulusan, Buku Pengurusan dan surat lantikan.
 

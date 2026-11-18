@@ -6,18 +6,10 @@ import { LABEL_STATUS, type StatusBeban } from '../lib/indeks'
 export function Logo({ kecil = false, terang = false }: { kecil?: boolean; terang?: boolean }) {
   return (
     <div className="flex items-center gap-2.5 select-none">
-      <svg viewBox="0 0 64 64" className={kecil ? 'h-8 w-8' : 'h-10 w-10'}>
-        <rect width="64" height="64" rx="16" fill={terang ? '#ffffff14' : '#0B1F3A'} />
-        <g className="origin-[32px_14px] animate-ayun">
-          <path d="M14 22h36" stroke="#F9C846" strokeWidth="4" strokeLinecap="round" />
-          <path d="M14 22l-6 14h12zM50 22l-6 14h12z" fill="#10B483" />
-        </g>
-        <path d="M32 14v34M20 50h24" stroke="#F9C846" strokeWidth="4" strokeLinecap="round" />
-        <circle cx="32" cy="14" r="4" fill="#F9C846" />
-      </svg>
+      <img src="/logo-ikon.png" alt="" className={`${kecil ? 'h-9 w-9' : 'h-11 w-11'} object-contain drop-shadow-sm`} />
       <div className="leading-none">
-        <div className={`font-display font-extrabold ${kecil ? 'text-lg' : 'text-xl'} ${terang ? 'text-white' : 'text-navy-900'}`}>
-          Neraca<span className="text-brand-500">Tugas</span>
+        <div className={`font-display font-black italic tracking-tight ${kecil ? 'text-lg' : 'text-xl'} ${terang ? 'text-white' : 'text-[#123E8C]'}`}>
+          AGIH<span className="bg-gradient-to-r from-[#2FB24A] to-[#7DC92B] bg-clip-text text-transparent">360</span>
         </div>
         {!kecil && <div className={`text-[10px] font-semibold tracking-[.18em] uppercase mt-1 ${terang ? 'text-navy-300' : 'text-navy-400'}`}>Agihan tugas seimbang</div>}
       </div>
