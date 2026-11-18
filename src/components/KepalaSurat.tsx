@@ -49,7 +49,7 @@ export function KepalaSurat({ s, mod }: { s: Sekolah; mod: ModKepala }) {
       <div className="flex items-center gap-3">
         <img src="/jata-negara.jpg" alt="Jata Negara" className="h-[22mm] w-[26mm] object-contain shrink-0" />
         <div className="flex-1 text-left leading-snug pl-1">
-          <div className="font-bold text-[14px]">KEMENTERIAN PENDIDIKAN MALAYSIA</div>
+          <div className="font-bold text-[14px]">KEMENTERIAN PENDIDIKAN</div>
           <div className="font-bold text-[13px]">{s.nama}</div>
           {alamat && <div className="text-[11px]">{alamat}</div>}
           <div className="text-[11px]">Kod Sekolah: {s.kod}{s.telefon ? ` · Telefon: ${s.telefon}` : ''}</div>

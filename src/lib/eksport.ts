@@ -114,7 +114,7 @@ async function kepalaWord(s: Sekolah, mod: ModKepalaDok, lebarPx: number) {
   const alamat = [s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ')
   const baris = (t: string, saiz: number, tebal = false) => new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: t, size: saiz, bold: tebal })] })
   const tengah = [
-    baris('KEMENTERIAN PENDIDIKAN MALAYSIA', 24, true),
+    baris('KEMENTERIAN PENDIDIKAN', 24, true),
     baris(s.nama, 22, true),
     ...(alamat ? [baris(alamat, 18)] : []),
     baris(`Kod Sekolah: ${s.kod}${s.telefon ? `  ·  Telefon: ${s.telefon}` : ''}`, 18),
