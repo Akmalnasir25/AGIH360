@@ -29,3 +29,11 @@ node scripts/uji-rls.mjs    # pengasingan data antara sekolah (Supabase TEMPATAN
 
 ## Peranan
 `admin` · `gb` (Guru Besar/Pengetua — lulus/muktamad) · `pk` (urus JK & lantik dalam bidangnya) · `guru` (Tugas Saya sahaja)
+
+## Borang Google untuk kumpul data guru
+`scripts/borang-guru-agih360.gs` — Google Apps Script yang mencipta Google Form (nama dari senarai rasmi, gred, waktu mengajar, e-mel DELIMa, jawatan, subjek) dan menjana helaian **Guru** dalam format templat AGIH360.
+1. Ubah KONFIGURASI (nama sekolah, kod, `JENIS` SK/SMK, `NAMA_GURU`).
+2. script.google.com → Projek baharu → tampal → Run `ciptaBorang`.
+3. Selepas guru mengisi: Sheet jawapan → menu **AGIH360 → Jana helaian Guru** → Download .xlsx → AGIH360 → Guru → Muat naik Excel.
+
+> Jangan commit senarai nama guru sebenar ke repo ini.
