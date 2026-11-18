@@ -78,7 +78,7 @@ export default function PapanPemuka() {
               const zon = tg.dari + 0.1 > t.ambang_tinggi ? 'bg-rose-400' : tg.dari + 0.1 < t.ambang_rendah ? 'bg-sky-400' : 'bg-brand-500'
               return (
                 <div key={tg.dari} className="flex-1 flex flex-col items-center justify-end h-full group">
-                  <div className="text-[11px] font-bold text-navy-600 mb-1 opacity-0 group-hover:opacity-100">{tg.bil}</div>
+                  <div className="text-[11px] font-bold text-navy-600 mb-1">{tg.bil || ''}</div>
                   <div className={`w-full rounded-t-lg ${zon} transition-all duration-700`} style={{ height: `${(tg.bil / s.maxTong) * 100}%`, minHeight: tg.bil ? 6 : 2, opacity: tg.bil ? 1 : 0.2 }} />
                 </div>
               )
@@ -162,9 +162,9 @@ function SenaraiRingkas({ tajuk, sub, warna, item, t }: {
       <div className="mt-3 space-y-3">
         {item.map(({ h, g }) => (
           <Link to={`/app/analisis?guru=${h.id}`} key={h.id} className="block group">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium truncate group-hover:text-brand-600">{g.nama}</span>
-              <span className="font-mono font-bold text-xs">{f2(h.indeks)}</span>
+            <div className="flex items-start justify-between gap-3 text-sm">
+              <span className="font-medium leading-snug group-hover:text-brand-600">{g.nama}</span>
+              <span className="shrink-0 font-mono font-bold text-xs mt-0.5">{f2(h.indeks)}</span>
             </div>
             <div className="mt-1"><BarIndeks nilai={h.indeks} rendah={t.ambang_rendah} tinggi={t.ambang_tinggi} /></div>
           </Link>

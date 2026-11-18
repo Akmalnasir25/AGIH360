@@ -10,7 +10,7 @@
 
 @layer components {
   .kad { @apply bg-white rounded-2xl shadow-card border border-navy-100/60; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition active:scale-[.98] disabled:opacity-50 disabled:pointer-events-none; }
+  .btn { @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition active:scale-[.98] disabled:opacity-50 disabled:pointer-events-none; }
   .btn-utama { @apply btn bg-brand-500 text-white hover:bg-brand-600 shadow-glow; }
   .btn-gelap { @apply btn bg-navy-900 text-white hover:bg-navy-800; }
   .btn-hantu { @apply btn text-navy-700 hover:bg-navy-50; }

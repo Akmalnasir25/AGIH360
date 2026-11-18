@@ -186,8 +186,8 @@ function SepandukSimulasi() {
 
 export function TajukHalaman({ tajuk, sub, tindakan }: { tajuk: string; sub?: string; tindakan?: React.ReactNode }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 no-print">
-      <div>
+    <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 mb-6 no-print">
+      <div className="min-w-0 flex-1 basis-80">
         <h1 className="text-2xl sm:text-3xl font-extrabold">{tajuk}</h1>
         {sub && <p className="text-navy-500 text-sm mt-1">{sub}</p>}
       </div>

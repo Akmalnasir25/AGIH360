@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Plus, Save, Trash2, UserCog } from 'lucide-react'
+import { ImagePlus, Plus, Save, Trash2, UserCog } from 'lucide-react'
+import { mampatImej } from '../components/KepalaSurat'
 import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
 import type { NamaJadual } from '../lib/stor'
@@ -54,6 +55,12 @@ export default function Tetapan() {
             <div><label className="label">Negeri</label><input className="input" value={s.negeri ?? ''} onChange={(e) => setS({ ...s, negeri: e.target.value })} /></div>
             <div><label className="label">Nama {s.jawatan_ketua ?? 'Guru Besar'}</label><input className="input" value={s.nama_ketua ?? ''} onChange={(e) => setS({ ...s, nama_ketua: e.target.value })} /></div>
             <div><label className="label">Sesi semasa</label><input type="number" className="input" value={s.tahun_semasa} onChange={(e) => setS({ ...s, tahun_semasa: Number(e.target.value) })} /></div>
+            <div className="col-span-2"><label className="label">No. telefon sekolah</label><input className="input" value={s.telefon ?? ''} onChange={(e) => setS({ ...s, telefon: e.target.value })} placeholder="cth. 06-123 4567" /></div>
+          </div>
+          <div className="mt-5 pt-4 border-t border-navy-100 space-y-4">
+            <div className="text-xs text-navy-500">Untuk cetakan <b>Surat Lantikan</b> &amp; <b>Senarai AJK</b>. Tekan <b>Simpan tetapan</b> selepas memuat naik.</div>
+            <MuatImej label="Logo sekolah" nota="PNG/JPG segi empat. Dipapar di sebelah nama sekolah." nilai={s.logo_url} set={(v) => setS({ ...s, logo_url: v })} lebar={400} jenis="image/png" had={550000} kelas="h-20 w-20 object-contain" />
+            <MuatImej label="Kepala surat (imej penuh)" nota="Imbas / eksport kepala surat rasmi sebagai imej melintang (cth. 2000×400 px)." nilai={s.kepala_surat ?? null} set={(v) => setS({ ...s, kepala_surat: v })} lebar={2000} jenis="image/jpeg" had={1400000} kelas="w-full max-h-28 object-contain object-left" />
           </div>
         </div>
 
@@ -136,6 +143,33 @@ function Pengguna() {
       {mesej && <div className="text-sm mt-2 text-navy-600">{mesej}</div>}
       <div className="mt-4 divide-y divide-navy-100">
         {ahli.map((a) => <div key={a.emel} className="flex justify-between py-2 text-sm"><span>{a.emel}{a.dijemput && <span className="cip bg-amber-100 text-amber-800 ml-2">dijemput · belum log masuk</span>}</span><span className="cip bg-navy-100 text-navy-700 uppercase">{a.peranan}{a.bidang_id ? ` · ${k.data.bidang.find((b) => b.id === a.bidang_id)?.nama}` : ''}</span></div>)}
+      </div>
+    </div>
+  )
+}
+
+function MuatImej({ label, nota, nilai, set, lebar, jenis, had, kelas }: {
+  label: string; nota: string; nilai: string | null; set: (v: string | null) => void; lebar: number; jenis: 'image/png' | 'image/jpeg'; had: number; kelas: string
+}) {
+  const [ralat, setRalat] = useState<string | null>(null)
+  const [sibuk, setSibuk] = useState(false)
+  const pilih = async (f?: File) => {
+    if (!f) return
+    setRalat(null); setSibuk(true)
+    try { set(await mampatImej(f, lebar, jenis, had)) } catch (e) { setRalat((e as Error).message) } finally { setSibuk(false) }
+  }
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <div className="rounded-xl border border-dashed border-navy-200 p-3">
+        {nilai ? <img src={nilai} alt={label} className={kelas} /> : <div className="text-xs text-navy-400 py-3 text-center">Belum dimuat naik</div>}
+        <div className="mt-2 flex items-center gap-2">
+          <label className="btn-garis py-1.5 text-xs cursor-pointer"><ImagePlus size={14} /> {sibuk ? 'Memproses…' : nilai ? 'Tukar' : 'Muat naik'}
+            <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => { void pilih(e.target.files?.[0]); e.target.value = '' }} /></label>
+          {nilai && <button type="button" onClick={() => set(null)} className="btn-hantu py-1.5 text-xs text-rose-600"><Trash2 size={14} /> Buang</button>}
+        </div>
+        <p className="text-[11px] text-navy-400 mt-1.5">{nota}</p>
+        {ralat && <p className="text-xs text-rose-600 mt-1">{ralat}</p>}
       </div>
     </div>
   )

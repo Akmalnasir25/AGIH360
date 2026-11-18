@@ -7,6 +7,7 @@ import { pautanWhatsApp } from '../components/ui'
 import { teksTugas } from '../components/SejarahGuru'
 import { NotifikasiEmel } from '../components/NotifikasiEmel'
 import { boleh } from '../lib/kuasa'
+import { KepalaSurat, PilihKepala, useModKepala, type ModKepala } from '../components/KepalaSurat'
 
 export default function Surat() {
   const { k, peranan } = useAplikasi()
@@ -14,6 +15,7 @@ export default function Surat() {
   const [cari, setCari] = useState('')
   const [emel, setEmel] = useState(false)
   const ada = useMemo(() => (k ? k.data.guru.filter((g) => (k.lantikanGuru.get(g.id) ?? []).length > 0).sort((a, b) => a.nama.localeCompare(b.nama)) : []), [k])
+  const [mod, setMod] = useModKepalaAman(k?.data.sekolah)
   if (!k) return null
   const cetak = pilih.size ? ada.filter((g) => pilih.has(g.id)) : ada
   const tog = (id: string) => { const s = new Set(pilih); if (s.has(id)) s.delete(id); else s.add(id); setPilih(s) }
@@ -28,6 +30,7 @@ export default function Surat() {
       {!['lulus', 'muktamad'].includes(k.data.kelulusan.status) && (
         <div className="no-print mb-4 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">Agihan masih <b>{k.data.kelulusan.status}</b> — surat dicetak dengan tera <b>DRAF</b>. Luluskan agihan (Agih Tugas → Luluskan) untuk surat rasmi.</div>
       )}
+      <div className="mb-4"><PilihKepala mod={mod} set={setMod} s={k.data.sekolah} /></div>
       {emel && <NotifikasiEmel tutup={() => setEmel(false)} />}
       <div className="grid lg:grid-cols-[300px_1fr] gap-5">
         <div className="kad p-3 h-fit lg:sticky lg:top-6 no-print">
@@ -44,16 +47,16 @@ export default function Surat() {
           </div>
         </div>
         <div className="space-y-6 print:space-y-0">
-          {cetak.slice(0, pilih.size ? undefined : 3).map((g, i) => <SatuSurat key={g.id} k={k} guruId={g.id} bil={i + 1} />)}
+          {cetak.slice(0, pilih.size ? undefined : 3).map((g, i) => <SatuSurat key={g.id} k={k} guruId={g.id} bil={i + 1} mod={mod} />)}
           {!pilih.size && cetak.length > 3 && <div className="no-print text-center text-sm text-navy-500">Pratonton 3 surat pertama · {cetak.length - 3} lagi akan dicetak</div>}
-          <div className="hidden print:block">{!pilih.size && cetak.slice(3).map((g, i) => <SatuSurat key={g.id} k={k} guruId={g.id} bil={i + 4} />)}</div>
+          <div className="hidden print:block">{!pilih.size && cetak.slice(3).map((g, i) => <SatuSurat key={g.id} k={k} guruId={g.id} bil={i + 4} mod={mod} />)}</div>
         </div>
       </div>
     </div>
   )
 }
 
-export function SatuSurat({ k, guruId, bil }: { k: Konteks; guruId: string; bil: number }) {
+export function SatuSurat({ k, guruId, bil, mod }: { k: Konteks; guruId: string; bil: number; mod?: ModKepala }) {
   const d = k.data
   const s = d.sekolah
   const g = d.guru.find((x) => x.id === guruId)!
@@ -67,10 +70,7 @@ export function SatuSurat({ k, guruId, bil }: { k: Konteks; guruId: string; bil:
   return (
     <div className="relative overflow-hidden bg-white shadow-card print:shadow-none rounded-2xl print:rounded-none p-10 sm:p-14 text-[13px] leading-relaxed text-black page-break font-serif">
       {draf && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><span className="text-[120px] font-black text-rose-500/10 -rotate-[30deg] [print-color-adjust:exact]">DRAF</span></div>}
-      <div className="text-center border-b-2 border-black pb-3">
-        <div className="font-bold text-base uppercase">{s.nama}</div>
-        <div>{s.alamat}{s.daerah ? `, ${s.daerah}` : ''}{s.negeri ? `, ${s.negeri}` : ''}</div>
-      </div>
+      <KepalaSurat s={s} mod={mod ?? (s.kepala_surat ? 'imej' : 'logo')} />
       <div className="flex justify-between mt-4">
         <div>Ruj. Kami: {s.kod}/AT/{s.tahun_semasa}/{String(bil).padStart(3, '0')}</div>
         <div>Tarikh: {tarikh}</div>
@@ -97,4 +97,9 @@ export function SatuSurat({ k, guruId, bil }: { k: Konteks; guruId: string; bil:
       </div>
     </div>
   )
+}
+
+/** useModKepala memerlukan sekolah; sebelum data dimuat guna nilai sementara. */
+function useModKepalaAman(s: Konteks['data']['sekolah'] | undefined) {
+  return useModKepala(s ?? ({ kepala_surat: null } as Konteks['data']['sekolah']))
 }

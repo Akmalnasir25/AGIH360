@@ -137,7 +137,7 @@ export function binaDemo(jenis: JenisSekolah = 'SK'): DataSekolah {
     sekolah: {
       id: school_id, kod: jenis === 'SK' ? 'ABA0001' : 'ABA1001',
       nama: jenis === 'SK' ? 'SK Contoh Seri Harmoni' : 'SMK Contoh Seri Harmoni',
-      jenis, alamat: 'Jalan Pendidikan, 31650 Ipoh', daerah: 'Kinta Utara', negeri: 'Perak', logo_url: null,
+      jenis, alamat: 'Jalan Pendidikan, 31650 Ipoh', daerah: 'Kinta Utara', negeri: 'Perak', logo_url: null, kepala_surat: null,
       nama_ketua: guru[0].nama, jawatan_ketua: jenis === 'SK' ? 'Guru Besar' : 'Pengetua', tahun_semasa: tahun,
     },
     tetapan: {

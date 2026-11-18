@@ -67,16 +67,59 @@ async function simpan(blob: Blob, nama: string) {
   saveAs(blob, nama)
 }
 
+// ───────────────────────── Kepala surat (Word) ─────────────────────────
+export type ModKepalaDok = 'kosong' | 'logo' | 'imej'
+
+function dataUrlKeBait(url: string): { bait: Uint8Array; jenis: 'png' | 'jpg' } {
+  const [kepala, b64] = url.split(',')
+  const bin = atob(b64)
+  const bait = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bait[i] = bin.charCodeAt(i)
+  return { bait, jenis: /png/i.test(kepala) ? 'png' : 'jpg' }
+}
+async function saizImej(url: string): Promise<{ w: number; h: number }> {
+  const img = new Image()
+  await new Promise<void>((ok, gagal) => { img.onload = () => ok(); img.onerror = () => gagal(new Error('Imej tidak sah')); img.src = url })
+  return { w: img.naturalWidth || 1, h: img.naturalHeight || 1 }
+}
+
+/** Perenggan kepala dokumen Word mengikut mod. lebarPx = lebar ruang taip halaman (96 dpi). */
+async function kepalaWord(s: Sekolah, mod: ModKepalaDok, lebarPx: number) {
+  const { Paragraph, TextRun, ImageRun, AlignmentType, BorderStyle } = await import('docx')
+  if (mod === 'kosong') return [new Paragraph({ spacing: { before: 1700 }, children: [] })]
+  if (mod === 'imej' && s.kepala_surat) {
+    const { bait, jenis } = dataUrlKeBait(s.kepala_surat)
+    const { w, h } = await saizImej(s.kepala_surat)
+    return [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 240 }, children: [new ImageRun({ type: jenis, data: bait, transformation: { width: lebarPx, height: Math.round((h / w) * lebarPx) } })] })]
+  }
+  const alamat = [s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ')
+  const out = []
+  if (s.logo_url) {
+    const { bait, jenis } = dataUrlKeBait(s.logo_url)
+    const { w, h } = await saizImej(s.logo_url)
+    const t = 80
+    out.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 60 }, children: [new ImageRun({ type: jenis, data: bait, transformation: { width: Math.round((w / h) * t), height: t } })] }))
+  }
+  out.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: s.nama.toUpperCase(), bold: true, size: 28 })] }))
+  if (alamat || s.telefon) out.push(new Paragraph({
+    alignment: AlignmentType.CENTER, spacing: { after: 240 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: '000000', space: 4 } },
+    children: [new TextRun({ text: [alamat, s.telefon ? `Tel: ${s.telefon}` : ''].filter(Boolean).join('  ·  '), size: 18 })],
+  }))
+  return out
+}
+
 // ───────────────────────── WORD (.docx) ─────────────────────────
-export async function keWord(s: Sekolah, data: BidangEksport[]) {
+export async function keWord(s: Sekolah, data: BidangEksport[], mod: ModKepalaDok = 'logo') {
   const D = await import('docx')
   const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, ShadingType, HeadingLevel, PageBreak } = D
   const garis = { style: BorderStyle.SINGLE, size: 4, color: '7A8BA6' }
   const sempadan = { top: garis, bottom: garis, left: garis, right: garis }
   const anak: (InstanceType<typeof Paragraph> | InstanceType<typeof Table>)[] = []
 
+  // Lebar ruang taip A4: 11906 − 2×1100 twip ≈ 647 px
+  anak.push(...(await kepalaWord(s, mod, 647)))
   anak.push(
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 60 }, children: [new TextRun({ text: s.nama.toUpperCase(), bold: true, size: 28 })] }),
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 60 }, children: [new TextRun({ text: tajukDokumen(s, data), bold: true, size: 24 })] }),
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 360 }, children: [new TextRun({ text: `SESI ${s.tahun_semasa}`, size: 22, color: '3A557D' })] }),
   )

@@ -1,54 +1,80 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertOctagon, AlertTriangle, CheckCircle2, Info, MessageSquareReply, Send } from 'lucide-react'
+import { AlertOctagon, AlertTriangle, CheckCircle2, ChevronRight, Info, MessageSquareReply, Send } from 'lucide-react'
 import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
 import { Avatar, Kosong } from '../components/ui'
 import { KATEGORI, kiraAmaran, type TahapAmaran } from '../lib/amaran'
 import { boleh } from '../lib/kuasa'
 
-const GAYA: Record<TahapAmaran, { kad: string; ikon: typeof Info; label: string }> = {
-  tinggi: { kad: 'border-rose-200 bg-rose-50/60', ikon: AlertOctagon, label: 'Kritikal' },
-  sederhana: { kad: 'border-amber-200 bg-amber-50/60', ikon: AlertTriangle, label: 'Perlu perhatian' },
-  info: { kad: 'border-sky-200 bg-sky-50/50', ikon: Info, label: 'Makluman' },
+const GAYA: Record<TahapAmaran, { kepala: string; ikon: typeof Info; label: string; warna: string }> = {
+  tinggi: { kepala: 'bg-rose-50 text-rose-700', ikon: AlertOctagon, label: 'Kritikal', warna: 'text-rose-600' },
+  sederhana: { kepala: 'bg-amber-50 text-amber-800', ikon: AlertTriangle, label: 'Perlu perhatian', warna: 'text-amber-600' },
+  info: { kepala: 'bg-sky-50 text-sky-700', ikon: Info, label: 'Makluman', warna: 'text-sky-600' },
 }
+const SUSUN: TahapAmaran[] = ['tinggi', 'sederhana', 'info']
+const HAD = 6
 
 export default function Amaran() {
   const { k } = useAplikasi()
-  const [kod, setKod] = useState<string | null>(null)
+  const [tahap, setTahap] = useState<TahapAmaran | null>(null)
+  const [buka, setBuka] = useState<Set<string>>(new Set())
   const semua = useMemo(() => (k ? kiraAmaran(k) : []), [k])
   if (!k) return null
-  const kiraan = new Map<string, number>()
-  for (const a of semua) kiraan.set(a.kod, (kiraan.get(a.kod) ?? 0) + 1)
-  const papar = semua.filter((a) => !kod || a.kod === kod)
+  const bilTahap = (t: TahapAmaran) => semua.filter((a) => a.tahap === t).length
+  // Kumpul ikut kategori, kritikal dahulu
+  const kumpulan = Object.entries(KATEGORI)
+    .map(([kod, v]) => ({ kod, ...v, item: semua.filter((a) => a.kod === kod) }))
+    .filter((x) => x.item.length && (!tahap || x.tahap === tahap))
+    .sort((a, b) => SUSUN.indexOf(a.tahap) - SUSUN.indexOf(b.tahap))
 
   return (
     <div className="animate-naik">
-      <TajukHalaman tajuk="Amaran" sub="Semakan automatik setiap kali agihan berubah. Klik amaran untuk terus ke tempatnya." />
-      <div className="flex flex-wrap gap-1.5 mb-5">
-        <button onClick={() => setKod(null)} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${!kod ? 'bg-navy-900 text-white' : 'bg-white border border-navy-200'}`}>Semua ({semua.length})</button>
-        {Object.entries(KATEGORI).filter(([c]) => kiraan.get(c)).map(([c, v]) => (
-          <button key={c} onClick={() => setKod(c)} className={`rounded-full px-3 py-1.5 text-sm font-semibold flex items-center gap-1.5 ${kod === c ? 'bg-navy-900 text-white' : 'bg-white border border-navy-200'}`}>
-            <span className={`h-2 w-2 rounded-full ${v.tahap === 'tinggi' ? 'bg-rose-500' : v.tahap === 'sederhana' ? 'bg-amber-500' : 'bg-sky-500'}`} />{v.label} <span className="opacity-60">{kiraan.get(c)}</span>
-          </button>
-        ))}
+      <TajukHalaman tajuk="Amaran" sub="Semakan automatik setiap kali agihan berubah. Klik baris untuk terus ke tempatnya." />
+      <div className="flex flex-wrap gap-2 mb-5">
+        <button onClick={() => setTahap(null)} className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${!tahap ? 'bg-navy-900 text-white' : 'bg-white border border-navy-200'}`}>Semua <span className="opacity-60">{semua.length}</span></button>
+        {SUSUN.map((t) => { const G = GAYA[t]; return (
+          <button key={t} onClick={() => setTahap(t)} className={`rounded-full px-3.5 py-1.5 text-sm font-semibold flex items-center gap-1.5 ${tahap === t ? 'bg-navy-900 text-white' : 'bg-white border border-navy-200'}`}>
+            <G.ikon size={14} className={tahap === t ? '' : G.warna} />{G.label} <span className="opacity-60">{bilTahap(t)}</span>
+          </button>) })}
       </div>
 
-      <div className="grid xl:grid-cols-[1fr_380px] gap-5">
-        <div className="space-y-2">
-          {papar.length === 0 && <div className="kad"><Kosong ikon={<CheckCircle2 />} tajuk="Tiada amaran" teks="Agihan nampak sihat." /></div>}
-          {papar.map((a, i) => {
-            const g = GAYA[a.tahap]
-            const ke = a.kod === 'A05' || a.kod === 'A04' ? `/app/jawatankuasa?jk=${a.jkId}` : a.guruId ? `/app/analisis?guru=${a.guruId}` : '/app/jawatankuasa'
+      <div className="grid xl:grid-cols-[1fr_340px] gap-5 items-start">
+        <div className="space-y-3">
+          {kumpulan.length === 0 && <div className="kad"><Kosong ikon={<CheckCircle2 />} tajuk="Tiada amaran" teks="Agihan nampak sihat." /></div>}
+          {kumpulan.map((x) => {
+            const G = GAYA[x.tahap]
+            const semuaBuka = buka.has(x.kod)
+            const item = semuaBuka ? x.item : x.item.slice(0, HAD)
             return (
-              <Link to={ke} key={i} className={`flex items-start gap-3 rounded-2xl border p-3.5 hover:shadow-card transition ${g.kad}`}>
-                <g.ikon size={18} className={a.tahap === 'tinggi' ? 'text-rose-600' : a.tahap === 'sederhana' ? 'text-amber-600' : 'text-sky-600'} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap"><span className="font-mono text-[10px] text-navy-400">{a.kod}</span><span className="text-[11px] font-bold uppercase tracking-wide text-navy-500">{KATEGORI[a.kod].label}</span></div>
-                  <div className="font-semibold">{a.tajuk}</div>
-                  <div className="text-sm text-navy-600">{a.butiran}</div>
+              <div key={x.kod} className="kad overflow-hidden">
+                <div className={`flex items-center gap-2 px-4 py-2.5 ${G.kepala}`}>
+                  <G.ikon size={16} />
+                  <span className="font-bold text-sm">{x.label}</span>
+                  <span className="cip bg-white/70">{x.item.length}</span>
+                  <span className="ml-auto text-[11px] font-semibold opacity-80">{G.label}</span>
                 </div>
-              </Link>
+                <div className="divide-y divide-navy-50">
+                  {item.map((a, i) => {
+                    const ke = a.kod === 'A05' || a.kod === 'A04' ? `/app/jawatankuasa?jk=${a.jkId}` : a.guruId ? `/app/analisis?guru=${a.guruId}` : '/app/jawatankuasa'
+                    return (
+                      <Link to={ke} key={i} className="flex items-center gap-3 px-4 py-2 hover:bg-navy-50/60 group">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold text-sm">{a.tajuk}</span>
+                          <span className="text-sm text-navy-500"> — {a.butiran}</span>
+                        </div>
+                        <ChevronRight size={15} className="shrink-0 text-navy-300 group-hover:text-navy-600" />
+                      </Link>
+                    )
+                  })}
+                </div>
+                {x.item.length > HAD && (
+                  <button onClick={() => setBuka((s) => { const n = new Set(s); if (n.has(x.kod)) n.delete(x.kod); else n.add(x.kod); return n })}
+                    className="w-full px-4 py-2 text-xs font-semibold text-brand-700 hover:bg-navy-50 border-t border-navy-100">
+                    {semuaBuka ? 'Tunjuk sedikit' : `Tunjuk semua ${x.item.length}`}
+                  </button>
+                )}
+              </div>
             )
           })}
         </div>

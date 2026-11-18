@@ -83,7 +83,7 @@ export function Modal({ buka, tutup, tajuk, sub, children, lebar = 'max-w-2xl' }
 }
 
 /** Nama ringkas: buang 'bin/binti …' untuk paparan padat */
-export const namaPendek = (n: string) => n.replace(/ (bin|binti|a\/l|a\/p|anak) .*/i, '')
+export const namaPendek = (n: string) => n.replace(/ (bin|binti|bt|bte|b|a\/l|a\/p|anak) .*/i, '')
 
 export function KadStat({ label, nilai, sub, ikon, warna = 'navy', onClick, aktif }: {
   label: string; nilai: ReactNode; sub?: ReactNode; ikon: ReactNode; warna?: 'navy' | 'brand' | 'rose' | 'sky' | 'amber'; onClick?: () => void; aktif?: boolean

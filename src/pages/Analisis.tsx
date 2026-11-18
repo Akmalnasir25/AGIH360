@@ -43,57 +43,58 @@ export default function Analisis() {
     <div className="animate-naik">
       <TajukHalaman tajuk="Analisis Beban" sub={`Median masa mengajar ${k.ringkasan.medianMasa} · sasaran tugas purata ${f1(k.ringkasan.purataJangkaan)} mata · ${k.ringkasan.bilDikira} guru dikira`} />
 
-      <div className="flex flex-col md:flex-row gap-3 mb-4">
-        <div className="flex gap-1.5 overflow-x-auto">
-          {[null, 'terbeban', 'seimbang', 'kurang', 'tiada_tugas', 'dikecualikan'].map((s) => (
-            <button key={s ?? 'semua'} onClick={() => setStatus(s)}
-              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold ${status === s ? 'bg-navy-900 text-white' : 'bg-white border border-navy-200 text-navy-600'}`}>
-              {s ? LABEL_STATUS[s as StatusBeban] : 'Semua'}
-            </button>
-          ))}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <div className="flex flex-wrap gap-1.5">
+          {[null, 'terbeban', 'seimbang', 'kurang', 'tiada_tugas', 'dikecualikan'].map((s) => {
+            const n = s ? [...k.hasil.values()].filter((h) => h.status === s).length : k.hasil.size
+            return (
+              <button key={s ?? 'semua'} onClick={() => setStatus(s)}
+                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${status === s ? 'bg-navy-900 text-white' : 'bg-white border border-navy-200 text-navy-600 hover:bg-navy-50'}`}>
+                {s ? LABEL_STATUS[s as StatusBeban] : 'Semua'} <span className="opacity-60">{n}</span>
+              </button>
+            )
+          })}
         </div>
-        <div className="relative md:ml-auto md:w-72">
+        <div className="relative ml-auto w-full sm:w-60">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" />
           <input className="input pl-9" placeholder="Cari guru…" value={cari} onChange={(e) => setCari(e.target.value)} />
         </div>
       </div>
+      <p className="text-xs text-navy-500 mb-3">Indeks <b>1.00</b> = beban purata sekolah · melebihi <b>{t.ambang_tinggi}</b> = terbeban · bawah <b>{t.ambang_rendah}</b> = ada ruang. Klik nama untuk lihat jawatan guru.</p>
 
       <div className="kad overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-navy-50/70 text-[11px] uppercase tracking-wider text-navy-500">
               <tr>
-                <th className="text-left px-4 py-3 w-10">#</th>
+                <th className="text-left px-4 py-3 w-10 hidden xl:table-cell">#</th>
                 <Th label="Guru" k="nama" isih={isih} set={setIsih} kiri />
-                <th className="text-left px-3 py-3">Status</th>
-                <th className="px-3 py-3 w-[26%]">Indeks beban</th>
+                <Th label="Indeks beban" k="indeks" isih={isih} set={setIsih} kiri />
                 <Th label="Masa" k="masa" isih={isih} set={setIsih} />
-                <Th label="Mata tugas" k="skor" isih={isih} set={setIsih} />
-                <th className="px-3 py-3">Sasaran</th>
+                <Th label="Mata / sasaran" k="skor" isih={isih} set={setIsih} />
                 <th className="px-3 py-3">Jawatan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-navy-100">
               {baris.map((r, i) => (
                 <tr key={r.g.id} onClick={() => { qs.set('guru', r.g.id); setQs(qs) }} className="hover:bg-brand-50/40 cursor-pointer">
-                  <td className="px-4 py-3 text-navy-400 font-mono text-xs">{i + 1}</td>
-                  <td className="px-3 py-3">
+                  <td className="px-4 py-2.5 text-navy-400 font-mono text-xs hidden xl:table-cell">{i + 1}</td>
+                  <td className="px-3 py-2.5 min-w-[220px]">
                     <div className="flex items-center gap-2.5">
                       <Avatar nama={r.g.nama} kecil />
                       <div className="min-w-0">
-                        <div className="font-semibold truncate max-w-[260px]">{r.g.nama}</div>
+                        <div className="font-semibold leading-snug">{r.g.nama}</div>
                         <div className="text-[11px] text-navy-400">{r.gred}{r.g.tag ? ` · ${r.g.tag}` : ''}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-3"><CipStatus s={r.h.status} /></td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-3"><div className="flex-1"><BarIndeks nilai={r.h.indeks} rendah={t.ambang_rendah} tinggi={t.ambang_tinggi} /></div><span className="font-mono font-bold text-xs w-9">{f2(r.h.indeks)}</span></div>
+                  <td className="px-3 py-2.5 min-w-[170px]">
+                    <div className="flex items-center gap-2"><div className="flex-1"><BarIndeks nilai={r.h.indeks} rendah={t.ambang_rendah} tinggi={t.ambang_tinggi} /></div><span className={`font-mono font-bold text-xs w-9 text-right ${r.h.status === 'terbeban' ? 'text-rose-600' : ''}`}>{f2(r.h.indeks)}</span></div>
+                    <div className="mt-1"><CipStatus s={r.h.status} /></div>
                   </td>
-                  <td className="px-3 py-3 text-center font-mono">{f1(r.h.masaLaras)}</td>
-                  <td className="px-3 py-3 text-center font-mono font-semibold">{f1(r.h.skor)}</td>
-                  <td className="px-3 py-3 text-center font-mono text-navy-400">{f1(r.h.sasaran)}</td>
-                  <td className="px-3 py-3 text-center">{r.bil}</td>
+                  <td className="px-3 py-2.5 text-center font-mono whitespace-nowrap">{f1(r.h.masaLaras)}{r.h.masaAndaian && <div className="text-[10px] font-sans text-amber-600 font-semibold" title="Masa mengajar belum diisi — guna median">andaian</div>}</td>
+                  <td className="px-3 py-2.5 text-center font-mono whitespace-nowrap"><b>{f1(r.h.skor)}</b><span className="text-navy-400"> / {f1(r.h.sasaran)}</span></td>
+                  <td className="px-3 py-2.5 text-center">{r.bil}</td>
                 </tr>
               ))}
             </tbody>

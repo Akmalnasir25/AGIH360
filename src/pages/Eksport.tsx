@@ -5,6 +5,8 @@ import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
 import { WARNA_BIDANG } from '../components/ui'
 import { binaCarta, keExcel, keWord, keWordBuku, kumpul, tajukDokumen, type Pilihan } from '../lib/eksport'
+import { KepalaSurat, PilihKepala, useModKepala } from '../components/KepalaSurat'
+import type { Sekolah } from '../lib/types'
 
 type Mod = 'semua' | 'bidang' | 'jk'
 
@@ -19,6 +21,7 @@ export default function Eksport() {
   const [p, setP] = useState<Pilihan>({ tunjukKosong: false, gabungPeranan: true })
   const [sibuk, setSibuk] = useState<string | null>(null)
   const [buku, setBuku] = useState(false)
+  const [modKepala, setModKepala] = useModKepala(k?.data.sekolah ?? ({ kepala_surat: null } as Sekolah))
 
   const data = useMemo(() => {
     if (!k) return []
@@ -35,7 +38,7 @@ export default function Eksport() {
   const jana = async (jenis: 'word' | 'excel') => {
     setSibuk(jenis)
     try {
-      if (jenis === 'word') await (buku ? keWordBuku(d.sekolah, data, binaCarta(k, data)) : keWord(d.sekolah, data))
+      if (jenis === 'word') await (buku ? keWordBuku(d.sekolah, data, binaCarta(k, data)) : keWord(d.sekolah, data, modKepala))
       else await keExcel(d.sekolah, data, k)
     } finally { setSibuk(null) }
   }
@@ -88,6 +91,7 @@ export default function Eksport() {
             <div className="label">2. Pilihan</div>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-brand-500 h-4 w-4" checked={p.gabungPeranan} onChange={(e) => setP({ ...p, gabungPeranan: e.target.checked })} /> Gabung AJK dalam satu baris bernombor</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-brand-500 h-4 w-4" checked={p.tunjukKosong} onChange={(e) => setP({ ...p, tunjukKosong: e.target.checked })} /> Tunjuk jawatan belum diisi</label>
+            {!buku && <div className="pt-2"><PilihKepala mod={modKepala} set={setModKepala} s={d.sekolah} /></div>}
           </div>
 
           <div className="kad p-4">
@@ -106,8 +110,8 @@ export default function Eksport() {
         <div className="bg-white shadow-card print:shadow-none rounded-2xl print:rounded-none p-8 sm:p-12 text-black text-[12.5px] font-sans min-h-[60vh]">
           {data.length === 0 ? <div className="text-center text-navy-400 py-20 no-print">Pilih unit atau jawatankuasa untuk dipratonton.</div> : <>
             {buku && <PraBuku k={k} data={data} />}
+            {!buku && <div className="mb-4"><KepalaSurat s={d.sekolah} mod={modKepala} /></div>}
             {!buku && <div className="text-center mb-8">
-              <div className="font-bold text-base">{d.sekolah.nama.toUpperCase()}</div>
               <div className="font-bold">{tajukDokumen(d.sekolah, data)}</div>
               <div className="text-gray-600">SESI {d.sekolah.tahun_semasa}</div>
             </div>}

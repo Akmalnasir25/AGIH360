@@ -11,6 +11,9 @@ export interface Sekolah {
   daerah: string | null
   negeri: string | null
   logo_url: string | null
+  /** Imej kepala surat penuh (data URL) — untuk cetakan */
+  kepala_surat?: string | null
+  telefon?: string | null
   nama_ketua: string | null
   jawatan_ketua: string | null
   tahun_semasa: number

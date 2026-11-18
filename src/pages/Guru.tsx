@@ -12,6 +12,7 @@ const KECUALI = /guru besar|pengetua|^pk|penolong kanan|penyelia petang|gkmp|kan
 export default function Guru() {
   const { k } = useAplikasi()
   const [cari, setCari] = useState('')
+  const [tapis, setTapis] = useState<'semua' | 'masa' | 'emel'>('semua')
   const [sunting, setSunting] = useState<Partial<G> | null>(null)
   const [tampal, setTampal] = useState(false)
   const [dariFail, setDariFail] = useState<{ nama: string; baris: string[][] } | null>(null)
@@ -24,9 +25,14 @@ export default function Guru() {
     catch (e) { setRalatFail((e as Error).message) }
     if (failRef.current) failRef.current.value = ''
   }
-  const senarai = useMemo(() => (k ? k.data.guru.filter((g) => !cari || g.nama.toLowerCase().includes(cari.toLowerCase())).sort((a, b) => a.nama.localeCompare(b.nama)) : []), [k, cari])
+  const senarai = useMemo(() => (k ? k.data.guru
+    .filter((g) => !cari || g.nama.toLowerCase().includes(cari.toLowerCase()))
+    .filter((g) => tapis === 'semua' || (tapis === 'masa' ? !(g.masa_seminggu > 0) : !g.emel))
+    .sort((a, b) => a.nama.localeCompare(b.nama)) : []), [k, cari, tapis])
   if (!k) return null
   const gred = new Map(k.data.gred.map((g) => [g.id, g.kod]))
+  const bilTiadaMasa = k.data.guru.filter((g) => !(g.masa_seminggu > 0)).length
+  const bilTiadaEmel = k.data.guru.filter((g) => !g.emel).length
 
   return (
     <div className="animate-naik">
@@ -49,33 +55,52 @@ export default function Guru() {
         </Kosong></div>
       ) : (
         <div className="kad overflow-hidden">
-          <div className="p-3 border-b border-navy-100">
-            <div className="relative max-w-sm"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" /><input className="input pl-9" placeholder="Cari guru…" value={cari} onChange={(e) => setCari(e.target.value)} /></div>
+          <div className="p-3 border-b border-navy-100 flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px] max-w-sm"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" /><input className="input pl-9" placeholder="Cari guru…" value={cari} onChange={(e) => setCari(e.target.value)} /></div>
+            <div className="flex rounded-xl bg-navy-50 p-1 text-xs font-semibold">
+              {([['semua', `Semua (${k.data.guru.length})`], ['masa', `Masa belum diisi (${bilTiadaMasa})`], ['emel', `Tiada e-mel (${bilTiadaEmel})`]] as const).map(([v, l]) => (
+                <button key={v} onClick={() => setTapis(v)} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${tapis === v ? 'bg-white shadow-card text-navy-900' : 'text-navy-500'}`}>{l}</button>
+              ))}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-navy-50/70 text-[11px] uppercase tracking-wider text-navy-500">
-                <tr><th className="text-left px-4 py-3">Nama</th><th className="px-3 py-3 text-left">Gred</th><th className="px-3 py-3">Masa/minggu</th><th className="px-3 py-3">Peperiksaan</th><th className="px-3 py-3 text-left">E-mel</th><th className="px-3 py-3 text-left">Kepakaran</th><th className="px-3 py-3 text-left">Status</th><th className="px-3 py-3">Indeks</th><th /></tr>
+                <tr><th className="text-left px-4 py-3">Guru</th><th className="px-3 py-3 text-left">Gred</th><th className="px-3 py-3 text-center">Masa / minggu</th><th className="px-3 py-3 text-left hidden xl:table-cell">Kepakaran</th><th className="px-3 py-3 text-left">Beban</th><th className="w-10" /></tr>
               </thead>
               <tbody className="divide-y divide-navy-100">
                 {senarai.map((g) => {
                   const h = k.hasil.get(g.id)
                   return (
-                    <tr key={g.id} className="hover:bg-navy-50/50">
-                      <td className="px-4 py-2.5"><div className="flex items-center gap-2.5"><Avatar nama={g.nama} kecil /><div><div className="font-semibold">{g.nama}</div>{g.tag && <div className="text-[11px] text-navy-400">{g.tag}</div>}</div></div></td>
-                      <td className="px-3 py-2.5">{g.gred_id ? gred.get(g.gred_id) : <span className="text-navy-300">—</span>}</td>
-                      <td className="px-3 py-2.5 text-center font-mono">{g.masa_seminggu > 0 ? g.masa_seminggu : <span title="Belum diisi — diandaikan median" className="cip bg-amber-100 text-amber-800">belum diisi</span>}</td>
-                      <td className="px-3 py-2.5 text-center">{g.kelas_peperiksaan ? 'Ya' : ''}</td>
-                      <td className="px-3 py-2.5 text-navy-500 text-xs">{g.emel ?? <span className="text-amber-600 font-semibold">tiada</span>}</td>
-                      <td className="px-3 py-2.5 text-xs">{g.kepakaran && <span className="cip bg-violet-100 text-violet-700">{g.kepakaran}</span>}</td>
-                      <td className="px-3 py-2.5">{g.status !== 'aktif' ? <span className="cip bg-navy-100 text-navy-600 capitalize">{g.status}</span> : h && <CipStatus s={h.status} />}</td>
-                      <td className="px-3 py-2.5 text-center font-mono text-xs">{h ? f2(h.indeks) : '—'}</td>
-                      <td className="px-3 py-2.5 text-right"><button onClick={() => setSunting(g)} className="p-1.5 rounded-lg hover:bg-navy-100 text-navy-400"><Pencil size={14} /></button></td>
+                    <tr key={g.id} onClick={() => setSunting(g)} className="hover:bg-navy-50/50 cursor-pointer">
+                      <td className="px-4 py-2.5 min-w-[240px]">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar nama={g.nama} kecil />
+                          <div className="min-w-0">
+                            <div className="font-semibold leading-snug">{g.nama}</div>
+                            <div className="text-[11px] text-navy-400 flex flex-wrap gap-x-2">
+                              {g.tag && <span>{g.tag}</span>}
+                              {g.emel ? <span className="text-navy-400">{g.emel}</span> : <span className="text-amber-600 font-semibold">tiada e-mel</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-xs">{g.gred_id ? gred.get(g.gred_id)?.replace(' dan ke bawah', '↓') : <span className="text-navy-300">—</span>}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        {g.masa_seminggu > 0 ? <span className="font-mono">{g.masa_seminggu}</span> : <span title="Belum diisi — diandaikan median" className="cip bg-amber-100 text-amber-800 whitespace-nowrap">belum diisi</span>}
+                        {g.kelas_peperiksaan && <div className="text-[10px] text-violet-600 font-semibold">+ peperiksaan</div>}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-navy-600 hidden xl:table-cell max-w-[200px]"><span className="line-clamp-2">{g.kepakaran ?? ''}</span></td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        {g.status !== 'aktif' ? <span className="cip bg-navy-100 text-navy-600 capitalize">{g.status}</span> : h && <span className="inline-flex items-center gap-2"><span className="font-mono text-xs w-9 text-right">{f2(h.indeks)}</span><CipStatus s={h.status} /></span>}
+                      </td>
+                      <td className="px-2 py-2.5 text-right"><Pencil size={14} className="text-navy-300 inline" /></td>
                     </tr>
                   )
                 })}
               </tbody>
             </table>
+            {senarai.length === 0 && <p className="p-6 text-center text-sm text-navy-400">Tiada guru sepadan.</p>}
           </div>
         </div>
       )}
