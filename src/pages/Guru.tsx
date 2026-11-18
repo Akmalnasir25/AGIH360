@@ -7,7 +7,7 @@ import { TajukHalaman } from '../components/Kerangka'
 import { Avatar, CipStatus, Kosong, Modal, f2, useSahkan } from '../components/ui'
 import type { Guru as G, Gred } from '../lib/types'
 
-const KECUALI = /guru besar|pengetua|^pk|penolong kanan|gkmp|kanan mata pelajaran/i
+const KECUALI = /guru besar|pengetua|^pk|penolong kanan|penyelia petang|gkmp|kanan mata pelajaran/i
 
 export default function Guru() {
   const { k } = useAplikasi()
