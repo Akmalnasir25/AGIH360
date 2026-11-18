@@ -17,6 +17,7 @@ import TugasLuar from './pages/TugasLuar'
 import Kelulusan from './pages/Kelulusan'
 import PanelPemilik from './pages/PanelPemilik'
 import { SekolahTidakAktif } from './pages/Masuk'
+import { KataLaluanGlobal } from './components/KataLaluan'
 import { boleh, type Tindakan } from './lib/kuasa'
 
 function Dilindungi() {
@@ -53,6 +54,7 @@ export default function App() {
   return (
     <PembekalAplikasi>
       <BrowserRouter>
+        <KataLaluanGlobal />
         <Routes>
           <Route path="/" element={<Utama />} />
           <Route path="/log-masuk" element={<LogMasuk />} />

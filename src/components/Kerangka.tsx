@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
-  AlertTriangle, BarChart3, ShieldCheck, ClipboardCheck, Dumbbell, FileDown, FileText, FlaskConical, LayoutDashboard, LogOut, Menu,
+  AlertTriangle, BarChart3, KeyRound, ShieldCheck, ClipboardCheck, Dumbbell, FileDown, FileText, FlaskConical, LayoutDashboard, LogOut, Menu,
   Network, Settings, Sparkles, UserRound, Users, X,
 } from 'lucide-react'
 import { useAplikasi } from '../context/Aplikasi'
 import { Logo, Modal } from './ui'
+import { bukaKataLaluan } from './KataLaluan'
 import type { Peranan } from '../lib/types'
 import { boleh, LABEL_PERANAN, type Tindakan } from '../lib/kuasa'
 import { kiraAmaran } from '../lib/amaran'
@@ -84,6 +85,9 @@ export function Kerangka() {
       )}
       <div className="p-4 border-t border-white/10">
         {sesi && !demo && <div className="text-[11px] text-navy-400 truncate mb-2">{sesi.user.email}</div>}
+        {sesi && !demo && (sesi.user.app_metadata?.provider ?? 'email') === 'email' && (
+          <button onClick={bukaKataLaluan} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-white/5"><KeyRound size={16} /> Kata laluan</button>
+        )}
         <button onClick={async () => { if (demo) keluarDemo(); else await keluar(); nav('/') }}
           className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-white/5">
           <LogOut size={16} /> {demo ? 'Keluar demo' : 'Log keluar'}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Building2, Clock, Mail, PauseCircle, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Building2, Clock, KeyRound, Mail, PauseCircle, RefreshCw } from 'lucide-react'
 import { useAplikasi, type Keahlian } from '../context/Aplikasi'
 import { Logo } from '../components/ui'
 import { supabase, supabaseAda } from '../lib/supabase'
@@ -34,6 +34,8 @@ export function LogMasuk() {
   const nav = useNavigate()
   const [emel, setEmel] = useState('')
   const [kod, setKod] = useState('')
+  const [kata, setKata] = useState('')
+  const [mod, setMod] = useState<'kata' | 'kod'>('kata')
   const [hantar, setHantar] = useState(false)
   const [sibuk, setSibuk] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
@@ -56,6 +58,14 @@ export function LogMasuk() {
     setSibuk(false)
     if (error) setRalat(error.message); else setHantar(true)
   }
+  const masukKata = async () => {
+    setSibuk(true); setRalat(null)
+    const { error } = await supabase!.auth.signInWithPassword({ email: emel.trim(), password: kata })
+    setSibuk(false)
+    if (error) setRalat(/invalid/i.test(error.message)
+      ? 'E-mel atau kata laluan salah. Kali pertama atau lupa kata laluan? Log masuk dengan kod e-mel di bawah.'
+      : error.message)
+  }
   const sahKod = async () => {
     setSibuk(true); setRalat(null)
     const { error } = await supabase!.auth.verifyOtp({ email: emel.trim(), token: kod.trim(), type: 'email' })
@@ -75,11 +85,20 @@ export function LogMasuk() {
             <svg viewBox="0 0 48 48" className="h-5 w-5"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.4-.4-3.5z" /><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" /><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" /><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" /></svg>
             Log masuk dengan DELIMa
           </button>
-          <div className="my-6 flex items-center gap-3 text-xs text-navy-400"><div className="h-px flex-1 bg-navy-100" />atau kod e-mel<div className="h-px flex-1 bg-navy-100" /></div>
-          {!hantar ? (
+          <div className="my-6 flex items-center gap-3 text-xs text-navy-400"><div className="h-px flex-1 bg-navy-100" />atau e-mel<div className="h-px flex-1 bg-navy-100" /></div>
+          {mod === 'kata' ? (
+            <div className="space-y-3">
+              <div className="relative"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" /><input className="input pl-9 py-2.5" type="email" autoComplete="username" placeholder="nama@moe-dl.edu.my" value={emel} onChange={(e) => setEmel(e.target.value)} /></div>
+              <div className="relative"><KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" /><input className="input pl-9 py-2.5" type="password" autoComplete="current-password" placeholder="Kata laluan" value={kata} onChange={(e) => setKata(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && emel.includes('@') && kata && masukKata()} /></div>
+              <button disabled={!emel.includes('@') || !kata || sibuk} onClick={masukKata} className="btn-utama w-full py-2.5">Log masuk</button>
+              <button onClick={() => { setMod('kod'); setRalat(null) }} className="w-full text-xs text-brand-700 font-semibold hover:underline">Kali pertama / lupa kata laluan? Log masuk dengan kod e-mel</button>
+            </div>
+          ) : !hantar ? (
             <div className="space-y-3">
               <div className="relative"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" /><input className="input pl-9 py-2.5" type="email" placeholder="nama@moe-dl.edu.my" value={emel} onChange={(e) => setEmel(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && mintaKod()} /></div>
               <button disabled={!emel.includes('@') || sibuk} onClick={mintaKod} className="btn-utama w-full py-2.5">Hantar kod 6 digit</button>
+              <p className="text-[11px] text-navy-500 text-center">Selepas masuk, anda boleh cipta kata laluan untuk log masuk seterusnya.</p>
+              <button onClick={() => { setMod('kata'); setRalat(null) }} className="w-full text-xs text-navy-500 hover:underline">← Log masuk dengan kata laluan</button>
             </div>
           ) : (
             <div className="space-y-3">

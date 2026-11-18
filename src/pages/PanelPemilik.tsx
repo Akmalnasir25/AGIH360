@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Building2, CheckCircle2, Clock, LogOut, PauseCircle, Plus, RefreshCw, Search, ShieldCheck, UserPlus } from 'lucide-react'
+import { ArrowLeft, Building2, KeyRound, CheckCircle2, Clock, LogOut, PauseCircle, Plus, RefreshCw, Search, ShieldCheck, UserPlus } from 'lucide-react'
 import { useAplikasi } from '../context/Aplikasi'
 import { Logo, Modal, useSahkan } from '../components/ui'
+import { bukaKataLaluan } from '../components/KataLaluan'
 import { supabase } from '../lib/supabase'
 import type { JenisSekolah } from '../lib/types'
 
@@ -69,6 +70,7 @@ export default function PanelPemilik() {
           <Logo terang kecil />
           <div className="flex items-center gap-2 text-sm">
             {keahlian.length > 0 && <Link to="/app" className="btn bg-white/10 hover:bg-white/15 text-white"><ArrowLeft size={15} /> Sekolah saya</Link>}
+            <button onClick={bukaKataLaluan} className="btn bg-white/10 hover:bg-white/15 text-white"><KeyRound size={15} /> Kata laluan</button>
             <button onClick={async () => { await keluar(); nav('/') }} className="btn bg-white/10 hover:bg-white/15 text-white"><LogOut size={15} /> Keluar</button>
           </div>
         </div>
