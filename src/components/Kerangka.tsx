@@ -13,7 +13,7 @@ import { kiraAmaran } from '../lib/amaran'
 import { binaKonteks } from '../lib/indeks'
 
 const MENU: { ke: string; label: string; ikon: typeof Users; perlu: Tindakan | null; lencana?: 'amaran' }[] = [
-  { ke: '/app', label: 'Papan Pemuka', ikon: LayoutDashboard, perlu: 'lihat_pengurusan' },
+  { ke: '/app', label: 'Dashboard', ikon: LayoutDashboard, perlu: 'lihat_pengurusan' },
   { ke: '/app/jawatankuasa', label: 'Agih Tugas', ikon: Network, perlu: 'lihat_pengurusan' },
   { ke: '/app/amaran', label: 'Amaran', ikon: AlertTriangle, perlu: 'lihat_pengurusan', lencana: 'amaran' },
   { ke: '/app/analisis', label: 'Analisis Beban', ikon: BarChart3, perlu: 'lihat_pengurusan' },

@@ -43,7 +43,7 @@ export default function PapanPemuka() {
 
   return (
     <div className="animate-naik">
-      <TajukHalaman tajuk="Papan Pemuka" sub={`Gambaran beban tugas ${s.dikira.length} guru · sesi ${k.data.sekolah.tahun_semasa}`}
+      <TajukHalaman tajuk="Dashboard" sub={`Gambaran beban tugas ${s.dikira.length} guru · sesi ${k.data.sekolah.tahun_semasa}`}
         tindakan={<Link to="/app/jawatankuasa" className="btn-utama">Agih tugas <ArrowRight size={16} /></Link>} />
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
