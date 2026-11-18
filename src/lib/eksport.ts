@@ -92,21 +92,43 @@ async function kepalaWord(s: Sekolah, mod: ModKepalaDok, lebarPx: number) {
     const { w, h } = await saizImej(s.kepala_surat)
     return [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 240 }, children: [new ImageRun({ type: jenis, data: bait, transformation: { width: lebarPx, height: Math.round((h / w) * lebarPx) } })] })]
   }
-  const alamat = [s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ')
-  const out = []
-  if (s.logo_url) {
-    const { bait, jenis } = dataUrlKeBait(s.logo_url)
-    const { w, h } = await saizImej(s.logo_url)
-    const t = 80
-    out.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 60 }, children: [new ImageRun({ type: jenis, data: bait, transformation: { width: Math.round((w / h) * t), height: t } })] }))
+  // Format KPM: Jata Negara | KPM + maklumat sekolah | logo sekolah, dalam jadual tanpa sempadan
+  const { Table, TableRow, TableCell, WidthType, VerticalAlign } = await import('docx')
+  const tiada = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+  const tanpa = { top: tiada, bottom: tiada, left: tiada, right: tiada, insideHorizontal: tiada, insideVertical: tiada }
+  const gambar = async (url: string | null, tinggi: number) => {
+    if (!url) return new Paragraph({ children: [] })
+    try {
+      let dataUrl = url
+      if (!url.startsWith('data:')) {
+        const blob = await (await fetch(url)).blob()
+        dataUrl = await new Promise<string>((ok) => { const r = new FileReader(); r.onload = () => ok(r.result as string); r.readAsDataURL(blob) })
+      }
+      const { bait, jenis } = dataUrlKeBait(dataUrl)
+      const { w, h } = await saizImej(dataUrl)
+      return new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: jenis, data: bait, transformation: { width: Math.round((w / h) * tinggi), height: tinggi } })] })
+    } catch {
+      return new Paragraph({ children: [] })  // imej gagal dimuat — dokumen tetap dijana
+    }
   }
-  out.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: s.nama.toUpperCase(), bold: true, size: 28 })] }))
-  if (alamat || s.telefon) out.push(new Paragraph({
-    alignment: AlignmentType.CENTER, spacing: { after: 240 },
-    border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: '000000', space: 4 } },
-    children: [new TextRun({ text: [alamat, s.telefon ? `Tel: ${s.telefon}` : ''].filter(Boolean).join('  ·  '), size: 18 })],
-  }))
-  return out
+  const alamat = [s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ')
+  const baris = (t: string, saiz: number, tebal = false) => new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: t, size: saiz, bold: tebal })] })
+  const tengah = [
+    baris('KEMENTERIAN PENDIDIKAN MALAYSIA', 24, true),
+    baris(s.nama, 22, true),
+    ...(alamat ? [baris(alamat, 18)] : []),
+    baris(`Kod Sekolah: ${s.kod}${s.telefon ? `  ·  Telefon: ${s.telefon}` : ''}`, 18),
+    baris(`E-mel: ${s.kod}@moe.edu.my`, 18),
+  ]
+  const jadual = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE }, borders: tanpa, columnWidths: [1700, 6300, 1700],
+    rows: [new TableRow({ children: [
+      new TableCell({ borders: tanpa, verticalAlign: VerticalAlign.CENTER, width: { size: 17, type: WidthType.PERCENTAGE }, children: [await gambar('/jata-negara.jpg', 75)] }),
+      new TableCell({ borders: tanpa, verticalAlign: VerticalAlign.CENTER, width: { size: 66, type: WidthType.PERCENTAGE }, children: tengah }),
+      new TableCell({ borders: tanpa, verticalAlign: VerticalAlign.CENTER, width: { size: 17, type: WidthType.PERCENTAGE }, children: [await gambar(s.logo_url, 85)] }),
+    ] })],
+  })
+  return [jadual, new Paragraph({ spacing: { after: 240 }, border: { bottom: { style: BorderStyle.DOTTED, size: 12, color: '000000', space: 4 } }, children: [] })]
 }
 
 // ───────────────────────── WORD (.docx) ─────────────────────────

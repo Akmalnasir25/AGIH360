@@ -21,7 +21,7 @@ export function useModKepala(s: Sekolah): [ModKepala, (m: ModKepala) => void] {
 export function PilihKepala({ mod, set, s }: { mod: ModKepala; set: (m: ModKepala) => void; s: Sekolah }) {
   const pilihan: [ModKepala, string, string][] = [
     ['imej', 'Kepala surat', s.kepala_surat ? 'Imej kepala surat rasmi sekolah' : 'Muat naik di Tetapan dahulu'],
-    ['logo', 'Logo + nama', 'Logo, nama & alamat sekolah dijana automatik'],
+    ['logo', 'Format KPM', 'Jata Negara + KPM + maklumat sekolah + logo sekolah (dijana automatik)'],
     ['kosong', 'Kosong', 'Ruang kosong — untuk kertas yang sudah bercetak kepala surat'],
   ]
   return (
@@ -37,19 +37,27 @@ export function PilihKepala({ mod, set, s }: { mod: ModKepala; set: (m: ModKepal
   )
 }
 
-/** Kepala dokumen bercetak. */
+export const emelSekolah = (s: Sekolah) => `${s.kod}@moe.edu.my`
+
+/** Kepala dokumen bercetak. Mod 'logo' = format rasmi KPM (Jata | KPM & maklumat sekolah | logo sekolah). */
 export function KepalaSurat({ s, mod }: { s: Sekolah; mod: ModKepala }) {
   if (mod === 'kosong') return <div className="h-[32mm]" aria-hidden />
   if (mod === 'imej' && s.kepala_surat) return <img src={s.kepala_surat} alt={s.nama} className="block w-full h-auto" />
   const alamat = [s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ')
   return (
-    <div className="flex items-center gap-4 border-b-2 border-black pb-3">
-      {s.logo_url ? <img src={s.logo_url} alt="" className="h-20 w-20 object-contain shrink-0" /> : <div className="w-0" />}
-      <div className={`flex-1 ${s.logo_url ? 'text-left' : 'text-center'}`}>
-        <div className="font-bold text-base uppercase">{s.nama}</div>
-        {alamat && <div>{alamat}</div>}
-        {s.telefon && <div>Tel: {s.telefon}</div>}
+    <div className="font-[Arial,sans-serif]">
+      <div className="flex items-center gap-3">
+        <img src="/jata-negara.jpg" alt="Jata Negara" className="h-[22mm] w-[26mm] object-contain shrink-0" />
+        <div className="flex-1 text-left leading-snug pl-1">
+          <div className="font-bold text-[14px]">KEMENTERIAN PENDIDIKAN MALAYSIA</div>
+          <div className="font-bold text-[13px]">{s.nama}</div>
+          {alamat && <div className="text-[11px]">{alamat}</div>}
+          <div className="text-[11px]">Kod Sekolah: {s.kod}{s.telefon ? ` · Telefon: ${s.telefon}` : ''}</div>
+          <div className="text-[11px]">E-mel: {emelSekolah(s)}</div>
+        </div>
+        {s.logo_url ? <img src={s.logo_url} alt="" className="h-[24mm] w-[24mm] object-contain shrink-0" /> : <div className="w-[24mm] shrink-0" />}
       </div>
+      <div className="mt-2 border-b-2 border-dotted border-black" />
     </div>
   )
 }
