@@ -1,4 +1,4 @@
-import { SEKSYEN_LALAI } from './buku'
+import { seksyenLalai } from './buku'
 import templat from './templat.json'
 import type { DataSekolah, Guru, JenisSekolah, Lantikan, StatusAgihan, TugasLuar } from './types'
 import type { Baris, NamaJadual, Stor } from './stor'
@@ -155,7 +155,7 @@ export function binaDemo(jenis: JenisSekolah = 'SK'): DataSekolah {
     maklumBalas: [
       { id: uid(), guru_id: guru[5].id, tahun, mesej: 'Saya juga jurulatih olahraga peringkat daerah setiap Sabtu. Mohon ambil kira dalam beban saya.', status: 'baru', balasan: null, dicipta: new Date(Date.now() - 7200e3).toISOString() },
     ],
-    buku: SEKSYEN_LALAI.map((x, n) => ({ id: uid(), ...x, imej: null, susunan: n + 1 })),
+    buku: [],
   }
 }
 
@@ -166,7 +166,10 @@ export class StorDemo implements Stor {
   mod: 'demo' | 'simulasi' = 'demo'
   private d: DataSekolah
   constructor(asal: JenisSekolah | DataSekolah = 'SK') {
-    if (typeof asal === 'string') this.d = binaDemo(asal)
+    if (typeof asal === 'string') {
+      this.d = binaDemo(asal)
+      this.d.buku = seksyenLalai(this.d.sekolah, this.d.guru.length).map((x, n) => ({ id: uid(), ...x, imej: null, susunan: n + 1 }))
+    }
     else { this.d = structuredClone(asal); this.mod = 'simulasi' }
   }
   async muat() {

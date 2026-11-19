@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, BookOpen, ImagePlus, Pencil, Plus, Save, Sparkles, 
 import { useAplikasi } from '../context/Aplikasi'
 import { Kosong, Modal, useSahkan } from '../components/ui'
 import { mampatImej } from '../components/KepalaSurat'
-import { SEKSYEN_LALAI } from '../lib/buku'
+import { seksyenLalai } from '../lib/buku'
 import type { SeksyenBuku } from '../lib/types'
 
 /** Kandungan Bab Pengenalan Buku Pengurusan — disunting oleh admin, GB, PK & Setiausaha. */
@@ -15,7 +15,7 @@ export function KandunganPengenalan() {
   const senarai = [...k.data.buku].sort((a, b) => a.susunan - b.susunan)
   const seterus = (senarai.at(-1)?.susunan ?? 0) + 1
 
-  const mulaTemplat = () => ubah((s) => s.simpanBanyak('buku_seksyen', SEKSYEN_LALAI.map((x, i) => ({ ...x, imej: null, susunan: i + 1 }))))
+  const mulaTemplat = () => ubah((s) => s.simpanBanyak('buku_seksyen', seksyenLalai(k.data.sekolah, k.data.guru.filter((g) => g.status !== 'bertukar' && !/^staf sokongan/i.test(g.tag ?? '')).length).map((x, i) => ({ ...x, imej: null, susunan: i + 1 }))))
   const alih = async (i: number, arah: -1 | 1) => {
     const a = senarai[i], b = senarai[i + arah]
     if (!a || !b) return
@@ -37,7 +37,7 @@ export function KandunganPengenalan() {
       </div>
 
       {senarai.length === 0 ? (
-        <div className="kad"><Kosong ikon={<BookOpen />} tajuk="Belum ada seksyen" teks="Mulakan dengan templat lazim (Setitip Harapan GB, Maklumat Sekolah, Sejarah, Lencana, Lagu, Visi & Misi, Ikrar, Takwim) — boleh diubah selepas itu.">
+        <div className="kad"><Kosong ikon={<BookOpen />} tajuk="Belum ada seksyen" teks="Templat sedia diisi: maklumat sekolah daripada sistem, Falsafah Pendidikan Kebangsaan, Visi & Misi KPM dan Ikrar. Anda hanya lengkapkan bahagian bertanda [isi …].">
           <button onClick={mulaTemplat} className="btn-utama"><Sparkles size={16} /> Guna templat</button>
         </Kosong></div>
       ) : (
