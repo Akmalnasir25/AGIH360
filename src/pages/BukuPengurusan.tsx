@@ -5,6 +5,7 @@ import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
 import { BukuPratonton, Kulit, Pemisah, binaBahagian } from '../components/BukuPratonton'
 import { KandunganPengenalan } from './Pengenalan'
+import { senaraiGuruBuku } from '../lib/buku'
 import { binaCarta, keWordBuku, kumpul } from '../lib/eksport'
 import { GAYA_ISI, GAYA_KULIT, GAYA_PEMISAH, PALET, bacaReka, hex, paletIkut, type RekaBuku } from '../lib/tema'
 
@@ -31,7 +32,7 @@ export default function BukuPengurusan() {
   }
   const word = async () => {
     setSibuk('word')
-    try { await keWordBuku(d.sekolah, data, binaCarta(k, data), seksyen, r) } finally { setSibuk(null) }
+    try { await keWordBuku(d.sekolah, data, binaCarta(k, data), seksyen, r, r.senaraiGuru !== false ? senaraiGuruBuku(d) : []) } finally { setSibuk(null) }
   }
 
   const TABS: [Tab, string, typeof Palette][] = [['kandungan', 'Kandungan', ScrollText], ['reka', 'Reka Bentuk', Palette], ['pratonton', 'Pratonton & Muat Turun', Printer]]
@@ -71,7 +72,7 @@ function PilihReka({ r, set }: { r: RekaBuku; set: (r: RekaBuku) => void }) {
   const s = k.data.sekolah
   const p = paletIkut(r.palet)
   const seksyen = [...k.data.buku].sort((a, b) => a.susunan - b.susunan)
-  const bhg = binaBahagian(seksyen, kumpul(k, {}, { tunjukKosong: false, gabungPeranan: true }), p)
+  const bhg = binaBahagian(seksyen, kumpul(k, {}, { tunjukKosong: false, gabungPeranan: true }), p, r.senaraiGuru !== false)
   const contohBhg = bhg[1] ?? bhg[0]
   return (
     <div className="space-y-6">
@@ -113,6 +114,13 @@ function PilihReka({ r, set }: { r: RekaBuku; set: (r: RekaBuku) => void }) {
               <ContohIsi gaya={g.id} w={hex(p.bahagian[1] ?? p.aksen)} utama={hex(p.utama)} lembut={hex(p.lembut)} />
             </Pilihan>
           ))}
+        </div>
+      </Kumpulan>
+
+      <Kumpulan tajuk="Senarai guru & staf" ikon={<ScrollText size={16} />} sub="Dijana terus daripada halaman Guru: nama, gred, jawatan, opsyen/subjek dan no. telefon — diasing ikut sesi & staf sokongan.">
+        <div className="flex flex-wrap gap-5 text-sm">
+          <label className="flex items-center gap-2"><input type="checkbox" className="accent-brand-500 h-4 w-4" checked={r.senaraiGuru !== false} onChange={(e) => set({ ...r, senaraiGuru: e.target.checked })} /> Sertakan dalam Bahagian A</label>
+          <label className="flex items-center gap-2"><input type="checkbox" className="accent-brand-500 h-4 w-4" disabled={r.senaraiGuru === false} checked={r.telefon !== false} onChange={(e) => set({ ...r, telefon: e.target.checked })} /> Papar no. telefon</label>
         </div>
       </Kumpulan>
 

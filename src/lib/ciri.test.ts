@@ -172,6 +172,6 @@ describe('Buku Pengurusan', () => {
     await keWordBuku(k.data.sekolah, data, carta)
     const zip = await JSZip.loadAsync(await ditangkap[0].blob.arrayBuffer())
     const xml = await zip.file('word/document.xml')!.async('string')
-    for (const t of ['BUKU PENGURUSAN', 'ISI KANDUNGAN', 'CARTA ORGANISASI', 'Bidang tugas:', 'BAHAGIAN A: PENTADBIRAN']) expect(xml).toContain(t)
+    for (const t of ['BUKU PENGURUSAN', 'ISI KANDUNGAN', 'CARTA ORGANISASI', 'Bidang tugas:', 'BAHAGIAN A: PENGENALAN &amp; MAKLUMAT SEKOLAH', 'BAHAGIAN B: PENTADBIRAN']) expect(xml).toContain(t)
   })
 })

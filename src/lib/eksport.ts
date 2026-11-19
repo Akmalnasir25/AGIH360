@@ -1,4 +1,5 @@
 import { paletIkut, warnaBahagian, type RekaBuku } from './tema'
+import type { KumpulanGuruBuku } from './buku'
 import type { Konteks } from './indeks'
 import type { Sekolah } from './types'
 
@@ -296,10 +297,10 @@ export function binaCarta(k: Konteks, data: BidangEksport[]): Carta {
 }
 
 // ───────────────────────── BUKU PENGURUSAN (Word) ─────────────────────────
-export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta, seksyen: { tajuk: string; isi: string | null; imej: string | null }[] = [], reka?: RekaBuku) {
+export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta, seksyen: { tajuk: string; isi: string | null; imej: string | null }[] = [], reka?: RekaBuku, guru: KumpulanGuruBuku[] = []) {
   const pl = paletIkut(reka?.palet)
   const huruf = (i: number) => String.fromCharCode(65 + i)
-  const mula = seksyen.length ? 1 : 0
+  const mula = 1  // Bahagian A = Pengenalan & Maklumat Sekolah (sentiasa ada)
   const D = await import('docx')
   const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, ShadingType, HeadingLevel, PageBreak, TableOfContents, VerticalAlign } = D
   const garis = { style: BorderStyle.SINGLE, size: 4, color: '7A8BA6' }
@@ -328,9 +329,9 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
   anak.push(new Paragraph({ children: [new PageBreak()] }))
 
   // Bab Pengenalan
+  anak.push(new Paragraph({ heading: HeadingLevel.HEADING_1, shading: { type: ShadingType.CLEAR, fill: warnaBahagian(pl, 0), color: 'auto' }, children: [new TextRun({ text: 'BAHAGIAN A: PENGENALAN & MAKLUMAT SEKOLAH' })] }))
   if (seksyen.length) {
     const { ImageRun } = D
-    anak.push(new Paragraph({ heading: HeadingLevel.HEADING_1, shading: { type: ShadingType.CLEAR, fill: warnaBahagian(pl, 0), color: 'auto' }, children: [new TextRun({ text: 'BAHAGIAN A: PENGENALAN & MAKLUMAT SEKOLAH' })] }))
     for (const x of seksyen) {
       anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true, spacing: { before: 240, after: 120 }, children: [new TextRun({ text: x.tajuk.toUpperCase(), color: warnaBahagian(pl, 0) })] }))
       for (const p of (x.isi ?? '').split(/\n\s*\n/)) {
@@ -376,6 +377,30 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
         children: c.jk.map((j) => new Paragraph({ spacing: { after: 20 }, children: [new TextRun({ text: `• ${j}`, size: 15 })] })) })) }),
     ],
   }))
+
+  // Senarai guru & staf
+  if (guru.length) {
+    const tel = reka?.telefon !== false
+    anak.push(new Paragraph({ children: [new PageBreak()] }))
+    anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'SENARAI GURU & STAF', color: warnaBahagian(pl, 0) })] }))
+    let bil = 0
+    const sel = (t: string, o: { kepala?: boolean; lebar?: number } = {}) => new TableCell({
+      borders: sempadan, width: o.lebar ? { size: o.lebar, type: WidthType.PERCENTAGE } : undefined,
+      shading: o.kepala ? { type: ShadingType.CLEAR, fill: warnaBahagian(pl, 0), color: 'auto' } : undefined,
+      children: [new Paragraph({ children: [new TextRun({ text: t, size: 16, bold: o.kepala, color: o.kepala ? 'FFFFFF' : undefined })] })],
+    })
+    for (const kg of guru) {
+      anak.push(P(`${kg.tajuk.toUpperCase()} (${kg.baris.length})`, { bold: true, size: 19, color: pl.utama, before: 200, after: 60 }))
+      const kepala = ['Bil', 'Nama', 'Gred', 'Jawatan', 'Opsyen / Subjek', ...(tel ? ['No. Tel'] : [])]
+      anak.push(new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ tableHeader: true, children: kepala.map((t, i) => sel(t, { kepala: true, lebar: [5, 32, 8, 20, 22, 13][i] })) }),
+          ...kg.baris.map((g) => new TableRow({ cantSplit: true, children: [String(++bil), g.nama, g.gred, g.jawatan, g.opsyen, ...(tel ? [g.telefon] : [])].map((t) => sel(t)) })),
+        ],
+      }))
+    }
+  }
 
   // Bahagian
   data.forEach((b, bi) => {

@@ -44,8 +44,14 @@ export const GAYA_ISI: { id: GayaIsi; nama: string; sub: string }[] = [
   { id: 'senarai', nama: 'Senarai Ringkas', sub: 'Padat, garis titik, jimat kertas' },
 ]
 
-export interface RekaBuku { palet: string; kulit: GayaKulit; pemisah: GayaPemisah; isi: GayaIsi; moto?: string; slogan?: string }
-export const REKA_LALAI: RekaBuku = { palet: 'gemilang', kulit: 'jalur', pemisah: 'jalur', isi: 'kad', moto: '', slogan: '' }
+export interface RekaBuku {
+  palet: string; kulit: GayaKulit; pemisah: GayaPemisah; isi: GayaIsi; moto?: string; slogan?: string
+  /** Sertakan senarai guru & staf (dijana daripada sistem) dalam Bahagian A */
+  senaraiGuru?: boolean
+  /** Papar no. telefon dalam senarai guru */
+  telefon?: boolean
+}
+export const REKA_LALAI: RekaBuku = { palet: 'gemilang', kulit: 'jalur', pemisah: 'jalur', isi: 'kad', moto: '', slogan: '', senaraiGuru: true, telefon: true }
 
 export function bacaReka(x: unknown): RekaBuku {
   const r = { ...REKA_LALAI, ...(x && typeof x === 'object' ? x as Partial<RekaBuku> : {}) }

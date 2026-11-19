@@ -3,6 +3,7 @@ import type { Konteks } from '../lib/indeks'
 import type { Sekolah, SeksyenBuku } from '../lib/types'
 import { binaCarta, type BidangEksport, type JKEksport } from '../lib/eksport'
 import { hex, paletIkut, warnaBahagian, type Palet, type RekaBuku } from '../lib/tema'
+import { senaraiGuruBuku, type KumpulanGuruBuku } from '../lib/buku'
 
 const X: CSSProperties = { printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' }
 /** Satu halaman A4 (skrin: nisbah A4; cetak: tinggi tetap & pecah halaman) */
@@ -10,15 +11,12 @@ const HALAMAN = 'relative overflow-hidden w-full aspect-[210/297] print:aspect-a
 
 export interface BahagianBuku { huruf: string; tajuk: string; warna: string; item: { kod: string; teks: string }[] }
 
-/** Susun bahagian buku: Pengenalan (jika ada) + setiap bidang. */
-export function binaBahagian(seksyen: SeksyenBuku[], data: BidangEksport[], p: Palet): BahagianBuku[] {
+/** Susun bahagian buku: A = Pengenalan & Maklumat Sekolah (seksyen + carta + senarai guru), kemudian setiap bidang. */
+export function binaBahagian(seksyen: SeksyenBuku[], data: BidangEksport[], p: Palet, denganSenarai = true): BahagianBuku[] {
   const out: BahagianBuku[] = []
   const huruf = (i: number) => String.fromCharCode(65 + i)
-  if (seksyen.length) {
-    const h = huruf(0)
-    out.push({ huruf: h, tajuk: 'Pengenalan & Maklumat Sekolah', warna: warnaBahagian(p, 0),
-      item: [...seksyen.map((x, i) => ({ kod: `${h}${i + 1}`, teks: x.tajuk })), { kod: `${h}${seksyen.length + 1}`, teks: 'Carta Organisasi' }] })
-  }
+  const a = [...seksyen.map((x) => x.tajuk), 'Carta Organisasi', ...(denganSenarai ? ['Senarai Guru & Staf'] : [])]
+  out.push({ huruf: 'A', tajuk: 'Pengenalan & Maklumat Sekolah', warna: warnaBahagian(p, 0), item: a.map((t, i) => ({ kod: `A${i + 1}`, teks: t })) })
   data.forEach((b) => {
     const i = out.length, h = huruf(i)
     out.push({ huruf: h, tajuk: b.nama, warna: warnaBahagian(p, i), item: b.jk.map((j, n) => ({ kod: `${h}${n + 1}`, teks: j.nama })) })
@@ -31,22 +29,24 @@ export function BukuPratonton({ k, data, reka }: { k: Konteks; data: BidangEkspo
   const s = k.data.sekolah
   const p = paletIkut(reka.palet)
   const seksyen = [...k.data.buku].sort((a, b) => a.susunan - b.susunan)
-  const bhg = binaBahagian(seksyen, data, p)
+  const denganSenarai = reka.senaraiGuru !== false
+  const bhg = binaBahagian(seksyen, data, p, denganSenarai)
   const carta = binaCarta(k, data)
-  const adaPengenalan = seksyen.length > 0
+  const guru = denganSenarai ? senaraiGuruBuku(k.data) : []
   return (
     <div className="space-y-8 print:space-y-0 text-[12.5px] leading-relaxed text-slate-800 font-[Arial,sans-serif]" style={X}>
       <Kulit s={s} p={p} reka={reka} bhg={bhg} />
       <IsiKandungan p={p} bhg={bhg} />
       {bhg.map((b, bi) => {
-        const bidang = adaPengenalan ? data[bi - 1] : data[bi]
+        const bidang = data[bi - 1]
         return (
           <div key={b.huruf} className="space-y-8 print:space-y-0">
             <Pemisah s={s} p={p} gaya={reka.pemisah} b={b} no={bi + 1} />
             <div className="halaman-isi bg-white p-10 print:p-0 print:break-after-page">
-              {adaPengenalan && bi === 0 ? <>
+              {bi === 0 ? <>
                 {seksyen.map((x, i) => <Seksyen key={x.id} x={x} kod={b.item[i].kod} w={b.warna} />)}
-                <Carta carta={carta} p={p} kod={b.item.at(-1)!.kod} w={b.warna} />
+                <Carta carta={carta} p={p} kod={b.item[seksyen.length].kod} w={b.warna} />
+                {denganSenarai && <SenaraiGuru kump={guru} kod={b.item[seksyen.length + 1].kod} w={b.warna} p={p} telefon={reka.telefon !== false} />}
               </> : bidang?.jk.map((j, ji) => <IsiJK key={j.no} j={j} kod={b.item[ji].kod} w={b.warna} gaya={reka.isi} p={p} />)}
             </div>
           </div>
@@ -308,6 +308,30 @@ function Carta({ carta, p, kod, w }: { carta: ReturnType<typeof binaCarta>; p: P
           </div>
         ))}
       </div>
+    </section>
+  )
+}
+function SenaraiGuru({ kump, kod, w, p, telefon }: { kump: KumpulanGuruBuku[]; kod: string; w: string; p: Palet; telefon: boolean }) {
+  let n = 0
+  return (
+    <section className="mb-6 print:break-before-page">
+      <TajukSub kod={kod} tajuk="Senarai Guru & Staf" w={w} />
+      {kump.map((k) => (
+        <div key={k.tajuk} className="mt-4">
+          <div className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: hex(p.utama) }}>{k.tajuk} <span className="text-slate-400">({k.baris.length})</span></div>
+          <table className="w-full border-collapse text-[10.5px]">
+            <thead><tr className="text-white" style={{ background: hex(w), ...X }}>
+              <th className="px-2 py-1 text-left w-8">Bil</th><th className="px-2 py-1 text-left">Nama</th><th className="px-2 py-1 text-left w-14">Gred</th>
+              <th className="px-2 py-1 text-left">Jawatan</th><th className="px-2 py-1 text-left">Opsyen / Subjek</th>{telefon && <th className="px-2 py-1 text-left w-24">No. Tel</th>}
+            </tr></thead>
+            <tbody>{k.baris.map((g) => { n++; return (
+              <tr key={g.nama + n} className="border-b border-slate-100 break-inside-avoid odd:bg-slate-50" style={X}>
+                <td className="px-2 py-1 text-slate-500">{n}</td><td className="px-2 py-1 font-semibold">{g.nama}</td><td className="px-2 py-1">{g.gred}</td>
+                <td className="px-2 py-1">{g.jawatan}</td><td className="px-2 py-1 text-slate-600">{g.opsyen}</td>{telefon && <td className="px-2 py-1 font-mono">{g.telefon}</td>}
+              </tr>) })}</tbody>
+          </table>
+        </div>
+      ))}
     </section>
   )
 }

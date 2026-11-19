@@ -68,3 +68,28 @@ export function seksyenLalai(s: Sekolah, bilGuru = 0): { tajuk: string; isi: str
     { tajuk: 'Takwim Persekolahan', isi: `[Kalendar persekolahan ${s.tahun_semasa}, cuti perayaan dan takwim peperiksaan — boleh dimuat naik sebagai imej.]` },
   ]
 }
+
+export interface BarisGuruBuku { nama: string; gred: string; jawatan: string; opsyen: string; telefon: string }
+export interface KumpulanGuruBuku { tajuk: string; baris: BarisGuruBuku[] }
+
+/** Senarai guru & staf untuk Buku Pengurusan: Sesi Pagi / Sesi Petang / Staf Sokongan; pentadbir di atas. */
+export function senaraiGuruBuku(d: { guru: import('./types').Guru[]; gred: import('./types').Gred[] }): KumpulanGuruBuku[] {
+  const gred = new Map(d.gred.map((g) => [g.id, g.kod.replace(' dan ke bawah', '')]))
+  const staf = (t: string) => /^staf sokongan/i.test(t)
+  const pentadbir = /guru besar|pengetua|^pk\b|penolong kanan/i
+  const jawatan = (tag: string | null) => (tag ?? '').split(',').map((x) => x.trim())
+    .filter((x) => x && !/^sesi (pagi|petang)$/i.test(x) && !/^staf sokongan$/i.test(x)).join(', ')
+  const aktif = d.guru.filter((g) => g.status !== 'bertukar')
+  const ke = (g: import('./types').Guru): BarisGuruBuku => ({
+    nama: g.nama, gred: g.gred_id ? gred.get(g.gred_id) ?? '' : '', jawatan: jawatan(g.tag), opsyen: g.kepakaran ?? '', telefon: g.telefon ?? '',
+  })
+  const susun = (a: import('./types').Guru, b: import('./types').Guru) =>
+    (pentadbir.test(b.tag ?? '') ? 1 : 0) - (pentadbir.test(a.tag ?? '') ? 1 : 0) || a.nama.localeCompare(b.nama)
+  const petang = (g: import('./types').Guru) => /sesi petang/i.test(g.tag ?? '')
+  const kump: KumpulanGuruBuku[] = [
+    { tajuk: 'Guru Sesi Pagi', baris: aktif.filter((g) => !staf(g.tag ?? '') && !petang(g)).sort(susun).map(ke) },
+    { tajuk: 'Guru Sesi Petang', baris: aktif.filter((g) => !staf(g.tag ?? '') && petang(g)).sort(susun).map(ke) },
+    { tajuk: 'Staf Sokongan', baris: aktif.filter((g) => staf(g.tag ?? '')).sort((a, b) => a.nama.localeCompare(b.nama)).map(ke) },
+  ]
+  return kump.filter((k) => k.baris.length)
+}

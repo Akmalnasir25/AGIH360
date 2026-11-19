@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { AlertTriangle, Archive, ArrowRight, ChevronDown, ChevronRight, CopyPlus, FileDown, FlaskConical, Lock, MousePointerClick, Pencil, Plus, Search, Sparkles, UserMinus, UserPlus, Users, Wand2, X } from 'lucide-react'
+import { AlertTriangle, Archive, ArchiveRestore, ArrowDown, ArrowRight, ArrowUp, ChevronDown, ChevronRight, CopyPlus, FileDown, FlaskConical, Lock, MousePointerClick, Pencil, Plus, Search, Sparkles, UserMinus, UserPlus, Users, Wand2, X } from 'lucide-react'
 import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
 import { PilihGuru } from '../components/PilihGuru'
@@ -13,6 +13,7 @@ import { LABEL_STATUS } from '../lib/indeks'
 import { boleh } from '../lib/kuasa'
 import { STATUS_KUNCI } from '../lib/stor'
 import type { Jawatankuasa as JK } from '../lib/types'
+import { supabase } from '../lib/supabase'
 
 /** true jika lebar skrin ≥ px. ≥1024: panel guru di kanan; ≥1280: senarai JK di kiri juga. */
 function useLebar(px: number) {
@@ -46,6 +47,7 @@ export default function Jawatankuasa() {
   const [auto, setAuto] = useState(false)
   const [suntingJK, setSuntingJK] = useState<Partial<JK> | null>(null)
   const [mesej, setMesej] = useState<string | null>(null)
+  const [arkibBuka, setArkibBuka] = useState(false)
   const [elSahkan, sahkan] = useSahkan()
 
   const senarai = useMemo(() => {
@@ -97,6 +99,7 @@ export default function Jawatankuasa() {
           {!terkunci && boleh(peranan, 'lantik', null, bidangSaya) && <button onClick={() => setAuto(true)} className="btn-gelap"><Wand2 size={16} /> Auto-agih</button>}
           {!terkunci && !simulasi && stor && <button onClick={mulaSimulasi} className="btn-garis text-violet-700"><FlaskConical size={16} /> Simulasi</button>}
           {!terkunci && !simulasi && boleh(peranan, 'urus_tetapan') && <button onClick={salin} className="btn-garis"><CopyPlus size={16} /> Salin {d.sekolah.tahun_semasa - 1}</button>}
+          {bolehCiptaJK && stor?.mod === 'live' && <button onClick={() => setArkibBuka(true)} className="btn-garis" title="Pulihkan JK yang telah dibuang"><ArchiveRestore size={16} /> JK dibuang</button>}
           {bolehCiptaJK && <button onClick={() => setSuntingJK({ bidang_id: bidang !== 'semua' ? bidang : bidangSaya ?? d.bidang[0]?.id, tahap_id: d.tahap[1]?.id, tempoh_id: d.tempoh[0]?.id, wajib: false, nama: '' })} className="btn-utama"><Plus size={16} /> Jawatankuasa</button>}
         </>} />
 
@@ -189,6 +192,7 @@ export default function Jawatankuasa() {
       {tambahJK && <TambahAhli jkId={tambahJK} tutup={() => setTambahJK(null)} />}
       {auto && <AutoAgih tutup={() => setAuto(false)} bidangAwal={bidang !== 'semua' ? bidang : bidangSaya} />}
       {suntingJK && <SuntingJK jk={suntingJK} tutup={() => setSuntingJK(null)} />}
+      {arkibBuka && <ArkibJK tutup={() => setArkibBuka(false)} />}
     </div>
   )
 }
@@ -217,6 +221,17 @@ function PanelJK({ jk, slotAktif, pilihSlot, lantik, urus, terkunci, tambahAhli,
   const papar = lipat ? slot.slice(nPentadbir) : slot
 
   const tambahSlot = (perananId: string) => ubah((s) => s.simpan('slot', { jawatankuasa_id: jk.id, peranan_id: perananId, label: null, susunan: slot.length + 1 }))
+  // Susun semula: tukar dua kedudukan, kemudian nombor semula 1..n (hanya simpan yang berubah)
+  const susunSemula = <T extends { id: string; susunan: number }>(senarai: T[], i: number, arah: -1 | 1) => {
+    const x = [...senarai]; const j = i + arah
+    if (j < 0 || j >= x.length) return null
+    ;[x[i], x[j]] = [x[j], x[i]]
+    return x.map((y, n) => ({ id: y.id, susunan: n + 1, lama: y.susunan })).filter((y) => y.susunan !== y.lama).map(({ id, susunan }) => ({ id, susunan }))
+  }
+  const jkBidang = d.jawatankuasa.filter((j) => j.bidang_id === jk.bidang_id).sort((a, b) => a.susunan - b.susunan)
+  const iJK = jkBidang.findIndex((j) => j.id === jk.id)
+  const alihJK = (arah: -1 | 1) => { const u = susunSemula(jkBidang, iJK, arah); if (u?.length) void ubah((s) => s.simpanBanyak('jawatankuasa', u)) }
+  const alihSlot = (sid: string, arah: -1 | 1) => { const u = susunSemula(slot, slot.findIndex((x) => x.id === sid), arah); if (u?.length) void ubah((s) => s.simpanBanyak('slot', u)) }
 
   return (
     <div className="kad overflow-hidden">
@@ -234,13 +249,17 @@ function PanelJK({ jk, slotAktif, pilihSlot, lantik, urus, terkunci, tambahAhli,
         <div className="flex items-center gap-1 shrink-0">
           <span className={`cip ${isi === slot.length ? 'bg-brand-100 text-brand-700' : 'bg-amber-100 text-amber-700'}`}>{isi}/{slot.length} diisi</span>
           <Link to={`/app/eksport?jk=${jk.id}`} title="Jana dokumen JK ini" className="p-1.5 rounded-lg hover:bg-navy-50 text-navy-400"><FileDown size={15} /></Link>
-          {urus && <button title="Sunting / buang JK" onClick={sunting} className="p-1.5 rounded-lg hover:bg-navy-50 text-navy-400"><Pencil size={15} /></button>}
+          {urus && <>
+            <button title="Naikkan JK dalam bidang" disabled={iJK <= 0} onClick={() => alihJK(-1)} className="p-1.5 rounded-lg hover:bg-navy-50 text-navy-400 disabled:opacity-30"><ArrowUp size={15} /></button>
+            <button title="Turunkan JK dalam bidang" disabled={iJK >= jkBidang.length - 1} onClick={() => alihJK(1)} className="p-1.5 rounded-lg hover:bg-navy-50 text-navy-400 disabled:opacity-30"><ArrowDown size={15} /></button>
+            <button title="Sunting / buang JK" onClick={sunting} className="p-1.5 rounded-lg hover:bg-navy-50 text-navy-400"><Pencil size={15} /></button>
+          </>}
           {!lantik && !terkunci && <span title="Di luar bidang anda" className="p-1.5"><Lock size={14} className="text-navy-300" /></span>}
         </div>
       </div>
 
       <div className="flex items-center gap-3 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-navy-400 bg-navy-50/60">
-        <span className="flex-1">Jawatan · Guru</span><span className="w-16 text-right" title="Indeks beban guru (1.00 = purata) · mata jawatan ini">Indeks</span><span className="w-11" />
+        <span className="flex-1">Jawatan · Guru</span><span className="w-16 text-right" title="Indeks beban guru (1.00 = purata) · mata jawatan ini">Indeks</span><span className="w-[76px]" />
       </div>
 
       <div className="divide-y divide-navy-50">
@@ -283,11 +302,13 @@ function PanelJK({ jk, slotAktif, pilihSlot, lantik, urus, terkunci, tambahAhli,
                 <div className="font-mono text-[10px] text-navy-400">{f1(k.skorSlot.get(s.id) ?? 0)} mata</div>
               </div>
               {urus ? (
-                <div className="w-11 shrink-0 flex opacity-0 group-hover:opacity-100">
+                <div className="w-[76px] shrink-0 flex opacity-0 group-hover:opacity-100">
+                  <button title="Naik" onClick={(e) => { e.stopPropagation(); alihSlot(s.id, -1) }} className="p-0.5 text-navy-300 hover:text-navy-700"><ArrowUp size={14} /></button>
+                  <button title="Turun" onClick={(e) => { e.stopPropagation(); alihSlot(s.id, 1) }} className="p-0.5 text-navy-300 hover:text-navy-700"><ArrowDown size={14} /></button>
                   <button title="Sunting jawatan (peranan / keterangan)" onClick={(e) => { e.stopPropagation(); setSuntingSlot(s.id) }} className="p-0.5 text-navy-300 hover:text-navy-700"><Pencil size={14} /></button>
                   <button title="Buang jawatan ini" onClick={(e) => { e.stopPropagation(); buangSlot(s.id, label, g?.nama) }} className="p-0.5 text-navy-300 hover:text-rose-600"><X size={14} /></button>
                 </div>
-              ) : <span className="w-11" />}
+              ) : <span className="w-[76px]" />}
             </div>
           )
         })}
@@ -519,6 +540,41 @@ function SuntingSlot({ slotId, tutup }: { slotId: string; tutup: () => void }) {
           <input autoFocus className="input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="cth. Pidato BM (Ketua)" /></div>
         <div className="flex justify-end gap-2 pt-2"><button onClick={tutup} className="btn-hantu">Batal</button><button disabled={sibuk} onClick={simpan} className="btn-utama"><Sparkles size={15} /> Simpan</button></div>
       </div>
+    </Modal>
+  )
+}
+
+/** Senarai JK yang telah dibuang (diarkib) — boleh dipulihkan bersama jawatannya. */
+function ArkibJK({ tutup }: { tutup: () => void }) {
+  const { k, ubah } = useAplikasi()
+  const [senarai, setSenarai] = useState<{ id: string; nama: string; bidang_id: string; bil_slot: number }[] | null>(null)
+  const [ralat, setRalat] = useState<string | null>(null)
+  const id = k?.data.sekolah.id
+  useEffect(() => {
+    if (!supabase || !id) return
+    void supabase.rpc('senarai_jk_arkib', { p_school: id }).then((r) => { if (r.error) setRalat(r.error.message); else setSenarai(r.data ?? []) })
+  }, [id])
+  if (!k) return null
+  const pulih = async (jkId: string) => {
+    setRalat(null)
+    try {
+      await ubah(async () => { const r = await supabase!.rpc('pulih_jk', { p_jk: jkId }); if (r.error) throw new Error(r.error.message) })
+      setSenarai((x) => (x ?? []).filter((j) => j.id !== jkId))
+    } catch (e) { setRalat((e as Error).message) }
+  }
+  return (
+    <Modal buka tutup={tutup} tajuk="Jawatankuasa yang telah dibuang" sub="Pulihkan JK berserta jawatannya. Lantikan guru tahun semasa yang digugurkan semasa JK dibuang perlu dilantik semula." lebar="max-w-xl">
+      {ralat && <p className="text-sm text-rose-600 mb-2">{ralat}</p>}
+      {senarai === null ? <p className="text-sm text-navy-400">Memuatkan…</p> : senarai.length === 0 ? <p className="text-sm text-navy-400">Tiada JK yang dibuang.</p> : (
+        <div className="divide-y divide-navy-100">
+          {senarai.map((j) => (
+            <div key={j.id} className="flex items-center gap-3 py-2">
+              <div className="flex-1 min-w-0"><div className="font-semibold text-sm">{j.nama}</div><div className="text-[11px] text-navy-500">{k.data.bidang.find((b) => b.id === j.bidang_id)?.nama} · {j.bil_slot} jawatan</div></div>
+              <button onClick={() => pulih(j.id)} className="btn-garis py-1.5 text-xs"><ArchiveRestore size={14} /> Pulihkan</button>
+            </div>
+          ))}
+        </div>
+      )}
     </Modal>
   )
 }

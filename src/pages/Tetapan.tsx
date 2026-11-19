@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { ImagePlus, Plus, Save, Trash2, UserCog } from 'lucide-react'
+import { ArrowDown, ArrowUp, ImagePlus, Plus, Save, Trash2, UserCog } from 'lucide-react'
 import { mampatImej } from '../components/KepalaSurat'
 import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
 import type { NamaJadual } from '../lib/stor'
 import { supabase } from '../lib/supabase'
 import type { Sekolah, Tetapan as T } from '../lib/types'
-import { useSahkan } from '../components/ui'
+import { WARNA_BIDANG, useSahkan } from '../components/ui'
 
 export default function Tetapan() {
   const { k, ubah, stor } = useAplikasi()
@@ -64,6 +64,7 @@ export default function Tetapan() {
           </div>
         </div>
 
+        <UrusBidang />
         <JadualPemberat tajuk="Tahap Jawatankuasa" jadual="tahap" baris={d.tahap.map((x) => ({ id: x.id, nama: x.nama, nilai: x.faktor, susunan: x.susunan }))} medan="faktor" />
         <JadualPemberat tajuk="Tempoh" jadual="tempoh" baris={d.tempoh.map((x) => ({ id: x.id, nama: x.nama, nilai: x.faktor, susunan: x.susunan }))} medan="faktor" />
         <JadualPemberat tajuk="Berat Peranan" jadual="peranan_jk" baris={d.peranan.map((x) => ({ id: x.id, nama: x.nama, nilai: x.berat, susunan: x.susunan }))} medan="berat" />
@@ -115,34 +116,122 @@ function JadualPemberat({ tajuk, jadual, baris, medan, namaMedan = 'nama' }: {
 
 function Pengguna() {
   const { k } = useAplikasi()
-  const [ahli, setAhli] = useState<{ user_id: string | null; emel: string; peranan: string; bidang_id: string | null; dijemput: boolean }[]>([])
+  const [ahli, setAhli] = useState<{ user_id: string | null; emel: string; peranan: string; bidang_id: string | null; guru_id: string | null; dijemput: boolean }[]>([])
   const [emel, setEmel] = useState('')
   const [p, setP] = useState('pk')
   const [bidang, setBidang] = useState('')
   const [mesej, setMesej] = useState('')
+  const [elSahkan, sahkan] = useSahkan()
   const id = k?.data.sekolah.id
   const muat = async () => { if (supabase && id) setAhli(((await supabase.rpc('senarai_ahli', { p_school: id })).data ?? []) as typeof ahli) }
   useEffect(() => { void muat() }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
   if (!k || !supabase) return null
-  const tambah = async () => {
-    const r = await supabase!.rpc('tetapkan_peranan', { p_school: id, p_emel: emel, p_peranan: p, p_bidang: bidang || null })
-    setMesej(r.error ? r.error.message : r.data === 'dijemput' ? `${emel} dijemput — peranan aktif sebaik dia log masuk kali pertama.` : 'Peranan dikemas kini.')
-    if (!r.error) setEmel('')
+  const tetap = async (e: string, per: string, bid: string | null) => {
+    const r = await supabase!.rpc('tetapkan_peranan', { p_school: id, p_emel: e, p_peranan: per, p_bidang: bid || null })
+    setMesej(r.error ? r.error.message : r.data === 'dijemput' ? `${e} dijemput — peranan aktif sebaik dia log masuk kali pertama.` : `Peranan ${e} dikemas kini.`)
+    void muat()
+    return !r.error
+  }
+  const tambah = async () => { if (await tetap(emel, p, bidang)) setEmel('') }
+  const keluar = async (e: string) => {
+    if (!(await sahkan(`Keluarkan ${e} daripada sekolah ini?\n\nDia tidak lagi boleh log masuk ke data sekolah. Rekod guru & lantikan tidak terjejas.`, { butang: 'Keluarkan', bahaya: true }))) return
+    const r = await supabase!.rpc('buang_ahli', { p_school: id, p_emel: e })
+    setMesej(r.error ? r.error.message : `${e} dikeluarkan.`)
     void muat()
   }
+  const namaGuru = (a: (typeof ahli)[number]) => k.data.guru.find((g) => g.id === a.guru_id || (g.emel && g.emel.toLowerCase() === a.emel.toLowerCase()))?.nama
+  const PERANAN: [string, string][] = [['admin', 'Admin'], ['gb', 'GB / Pengetua'], ['pk', 'PK'], ['su', 'Setiausaha (dokumen)'], ['guru', 'Guru']]
   return (
     <div className="kad p-5 mt-5">
+      {elSahkan}
       <h3 className="font-bold flex items-center gap-2"><UserCog size={18} /> Pengguna & Peranan</h3>
-      <p className="text-xs text-navy-500 mb-4">Guru dipautkan automatik melalui e-mel dalam senarai Guru. Peranan boleh ditetapkan walaupun orang itu belum pernah log masuk — ia aktif sebaik dia log masuk. Di sini anda tetapkan GB/Pengetua (lulus & muktamad), PK (urus JK & lantik dalam bidangnya) atau Admin.</p>
+      <p className="text-xs text-navy-500 mb-4">Guru dengan e-mel DELIMa dalam senarai Guru boleh log masuk sebagai <b>Guru</b> secara automatik. Di sini tetapkan peranan khas: GB/Pengetua (lulus & muktamad), PK (urus JK dalam bidangnya), Setiausaha (Buku Pengurusan & surat) atau Admin. Boleh ditetapkan sebelum orang itu log masuk.</p>
       <div className="flex flex-col sm:flex-row gap-2">
-        <input className="input" placeholder="e-mel@moe-dl.edu.my" value={emel} onChange={(e) => setEmel(e.target.value)} />
-        <select className="input sm:w-32" value={p} onChange={(e) => setP(e.target.value)}><option value="gb">GB / Pengetua</option><option value="pk">PK</option><option value="admin">Admin</option><option value="su">Setiausaha (dokumen)</option><option value="guru">Guru</option></select>
-        <select className="input sm:w-48" value={bidang} onChange={(e) => setBidang(e.target.value)}><option value="">Semua bidang</option>{k.data.bidang.map((b) => <option key={b.id} value={b.id}>{b.nama}</option>)}</select>
-        <button onClick={tambah} className="btn-gelap">Tetapkan</button>
+        <input className="input" list="senarai-emel-guru" placeholder="e-mel@moe-dl.edu.my (taip nama untuk cari)" value={emel} onChange={(e) => setEmel(e.target.value)} />
+        <datalist id="senarai-emel-guru">{k.data.guru.filter((g) => g.emel).map((g) => <option key={g.id} value={g.emel!}>{g.nama}</option>)}</datalist>
+        <select className="input sm:w-44" value={p} onChange={(e) => setP(e.target.value)}>{PERANAN.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+        <select className="input sm:w-44" value={bidang} onChange={(e) => setBidang(e.target.value)}><option value="">Semua bidang</option>{k.data.bidang.map((b) => <option key={b.id} value={b.id}>{b.nama}</option>)}</select>
+        <button onClick={tambah} disabled={!emel.trim()} className="btn-gelap">Tetapkan</button>
       </div>
       {mesej && <div className="text-sm mt-2 text-navy-600">{mesej}</div>}
       <div className="mt-4 divide-y divide-navy-100">
-        {ahli.map((a) => <div key={a.emel} className="flex justify-between py-2 text-sm"><span>{a.emel}{a.dijemput && <span className="cip bg-amber-100 text-amber-800 ml-2">dijemput · belum log masuk</span>}</span><span className="cip bg-navy-100 text-navy-700 uppercase">{a.peranan}{a.bidang_id ? ` · ${k.data.bidang.find((b) => b.id === a.bidang_id)?.nama}` : ''}</span></div>)}
+        {ahli.map((a) => (
+          <div key={a.emel} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+            <div className="flex-1 min-w-[220px]">
+              <div className="font-semibold">{namaGuru(a) ?? <span className="text-navy-400 font-normal">— tiada rekod guru —</span>}</div>
+              <div className="text-[11px] text-navy-500">{a.emel}{a.dijemput && <span className="cip bg-amber-100 text-amber-800 ml-2">dijemput · belum log masuk</span>}</div>
+            </div>
+            <select className="input py-1 text-xs w-40" value={a.peranan} onChange={(e) => void tetap(a.emel, e.target.value, a.bidang_id)}>{PERANAN.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+            <select className="input py-1 text-xs w-40" value={a.bidang_id ?? ''} disabled={a.peranan !== 'pk'} title={a.peranan !== 'pk' ? 'Bidang hanya untuk PK' : ''} onChange={(e) => void tetap(a.emel, a.peranan, e.target.value || null)}>
+              <option value="">Semua bidang</option>{k.data.bidang.map((b) => <option key={b.id} value={b.id}>{b.nama}</option>)}
+            </select>
+            <button onClick={() => keluar(a.emel)} title="Keluarkan" className="p-1.5 rounded-lg text-navy-300 hover:text-rose-600 hover:bg-rose-50"><Trash2 size={15} /></button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const WARNA_PILIHAN = Object.keys(WARNA_BIDANG)
+
+/** Bidang / Unit: tambah, tukar nama & warna, susun, buang (jika tiada JK). */
+function UrusBidang() {
+  const { k, ubah } = useAplikasi()
+  const [r, setR] = useState<{ id: string; nama: string; warna: string }[] | null>(null)
+  const [ralat, setRalat] = useState<string | null>(null)
+  const [elSahkan, sahkan] = useSahkan()
+  if (!k) return null
+  const asal = [...k.data.bidang].sort((a, b) => a.susunan - b.susunan).map((b) => ({ id: b.id, nama: b.nama, warna: b.warna }))
+  const baris = r ?? asal
+  const berubah = r !== null
+  const bilJK = (id: string) => k.data.jawatankuasa.filter((j) => j.bidang_id === id).length
+  const alih = (i: number, d: -1 | 1) => { const x = [...baris]; const j = i + d; if (j < 0 || j >= x.length) return; [x[i], x[j]] = [x[j], x[i]]; setR(x) }
+  const simpan = async () => {
+    setRalat(null)
+    try {
+      await ubah(async (s) => {
+        for (const [i, b] of baris.entries()) {
+          if (!b.nama.trim()) continue
+          await s.simpan('bidang', { ...(b.id.startsWith('baru') ? {} : { id: b.id }), nama: b.nama.trim(), warna: b.warna, susunan: i + 1 })
+        }
+      })
+      setR(null)
+    } catch (e) { setRalat((e as Error).message) }
+  }
+  const buang = async (b: { id: string; nama: string }) => {
+    if (b.id.startsWith('baru')) { setR(baris.filter((x) => x.id !== b.id)); return }
+    if (bilJK(b.id)) { setRalat(`"${b.nama}" masih ada ${bilJK(b.id)} jawatankuasa. Pindahkan JK ke bidang lain (Agih Tugas → sunting JK) dahulu.`); return }
+    if (!(await sahkan(`Buang bidang "${b.nama}"?`, { butang: 'Buang', bahaya: true }))) return
+    try { setRalat(null); await ubah((s) => s.buang('bidang', b.id)); setR(null) } catch (e) { setRalat((e as Error).message) }
+  }
+  return (
+    <div className="kad p-5">
+      {elSahkan}
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-bold">Bidang / Unit</h3>
+        <div className="flex gap-2">
+          <button onClick={() => setR([...baris, { id: `baru-${Date.now()}`, nama: '', warna: WARNA_PILIHAN[baris.length % WARNA_PILIHAN.length] }])} className="btn-hantu py-1 text-xs"><Plus size={13} /> Tambah</button>
+          {berubah && <button onClick={simpan} className="btn-utama py-1 text-xs"><Save size={13} /> Simpan</button>}
+        </div>
+      </div>
+      <p className="text-xs text-navy-500 mb-3">Bahagian dalam Agih Tugas, Senarai AJK & Buku Pengurusan (cth. Pentadbiran, Kurikulum, HEM, Kokurikulum, Pendidikan Khas). Susunan di sini = susunan bahagian dalam buku.</p>
+      {ralat && <div className="text-xs text-rose-600 mb-2">{ralat}</div>}
+      <div className="space-y-1.5">
+        {baris.map((b, i) => {
+          const w = WARNA_BIDANG[b.warna] ?? WARNA_BIDANG.slate
+          return (
+            <div key={b.id} className="flex items-center gap-2">
+              <span className={`h-3 w-3 rounded-full shrink-0 ${w.titik}`} />
+              <input className="input py-1.5 flex-1" value={b.nama} placeholder="Nama bidang" onChange={(e) => setR(baris.map((x) => (x.id === b.id ? { ...x, nama: e.target.value } : x)))} />
+              <select className="input py-1.5 w-28 text-xs" value={b.warna} onChange={(e) => setR(baris.map((x) => (x.id === b.id ? { ...x, warna: e.target.value } : x)))}>{WARNA_PILIHAN.map((c) => <option key={c} value={c}>{c}</option>)}</select>
+              <span className="text-[11px] text-navy-400 w-12 text-right">{b.id.startsWith('baru') ? 'baharu' : `${bilJK(b.id)} JK`}</span>
+              <button onClick={() => alih(i, -1)} disabled={i === 0} className="p-1 text-navy-400 disabled:opacity-30"><ArrowUp size={14} /></button>
+              <button onClick={() => alih(i, 1)} disabled={i === baris.length - 1} className="p-1 text-navy-400 disabled:opacity-30"><ArrowDown size={14} /></button>
+              <button onClick={() => buang(b)} className="p-1.5 text-navy-300 hover:text-rose-600"><Trash2 size={14} /></button>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
