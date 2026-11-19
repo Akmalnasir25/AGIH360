@@ -5,6 +5,7 @@ import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
 import { WARNA_BIDANG } from '../components/ui'
 import { keExcel, keWord, kumpul, tajukDokumen, type Pilihan } from '../lib/eksport'
+import { Skala } from '../components/SkalaA4'
 import { KepalaSurat, PilihKepala, useModKepala } from '../components/KepalaSurat'
 import type { Sekolah } from '../lib/types'
 
@@ -47,7 +48,7 @@ export default function Eksport() {
   return (
     <div>
       <TajukHalaman tajuk="Jana Dokumen" sub="Senarai AJK terus daripada agihan semasa. Ubah lantikan, jana semula — format sentiasa seragam." />
-      <div className="grid xl:grid-cols-[360px_1fr] gap-5">
+      <div className="grid xl:grid-cols-[360px_1fr] gap-5 print:block">
         {/* Panel pilihan */}
         <div className="space-y-4 no-print xl:sticky xl:top-6 h-fit">
           <div className="kad p-4">
@@ -108,7 +109,8 @@ export default function Eksport() {
         </div>
 
         {/* Pratonton (juga susun atur PDF) */}
-        <div className="bg-white shadow-card print:shadow-none rounded-2xl print:rounded-none p-8 sm:p-12 text-black text-[12.5px] font-sans min-h-[60vh]">
+        <div className="min-w-0"><Skala>
+        <div className="bg-white shadow-card print:shadow-none w-[210mm] min-h-[297mm] print:min-h-0 px-[20mm] py-[16mm] print:py-0 text-black text-[12.5px] font-sans">
           {data.length === 0 ? <div className="text-center text-navy-400 py-20 no-print">Pilih unit atau jawatankuasa untuk dipratonton.</div> : <>
             {!buku && <div className="mb-4"><KepalaSurat s={d.sekolah} mod={modKepala} /></div>}
             {!buku && <div className="text-center mb-8">
@@ -144,6 +146,7 @@ export default function Eksport() {
             ))}
           </>}
         </div>
+        </Skala></div>
       </div>
     </div>
   )

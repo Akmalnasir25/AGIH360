@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Skala } from './SkalaA4'
 import type { Sekolah } from '../lib/types'
 import { emelRasmi, isiKepala } from '../lib/kepala'
 
@@ -49,19 +50,20 @@ export function KepalaSurat({ s, mod }: { s: Sekolah; mod: ModKepala }) {
   const baris = ['KEMENTERIAN PENDIDIKAN', ...kiri]
   const mulaKanan = baris.length - kanan.length
   return (
+    <Skala lebar={642}>
     <table className="w-full border-collapse font-[Calibri,Carlito,Arial,sans-serif] text-black leading-[1.15]">
-      <colgroup><col style={{ width: '18%' }} /><col /><col style={{ width: '9%' }} /><col style={{ width: '2%' }} /><col style={{ width: '24%' }} /></colgroup>
       <tbody>
         {baris.map((t, i) => (
           <tr key={i}>
-            {i === 0 && <td rowSpan={baris.length} className="align-middle p-0 pr-2"><img src="/jata-negara.jpg" alt="Jata Negara" className="h-[23mm] w-auto object-contain" /></td>}
-            <td className={`p-0 text-[16px] whitespace-nowrap ${i === 0 ? 'font-bold' : ''}`}>{t}</td>
-            {i === 0 && mulaKanan > 0 && <td colSpan={3} rowSpan={mulaKanan} className="p-0 align-top text-right">{s.logo_url && <img src={s.logo_url} alt="" className="inline-block h-[19mm] w-auto object-contain" />}</td>}
-            {i >= mulaKanan && (() => { const [l, v] = kanan[i - mulaKanan]; return <><td className="p-0 text-[13px]">{l}</td><td className="p-0 text-[13px]">:</td><td className="p-0 text-[13px] whitespace-nowrap">{v}</td></> })()}
+            {i === 0 && <td rowSpan={baris.length} className="w-[1%] align-middle p-0 pr-[3mm]"><img src="/jata-negara.jpg" alt="Jata Negara" className="block h-[22mm] w-[26mm] max-w-none object-contain" /></td>}
+            <td className={`w-full p-0 pr-[4mm] text-[15px] whitespace-nowrap ${i === 0 ? 'font-bold' : ''}`}>{t}</td>
+            {i === 0 && mulaKanan > 0 && <td colSpan={3} rowSpan={mulaKanan} className="p-0 align-top text-right">{s.logo_url && <img src={s.logo_url} alt="" className="inline-block h-[19mm] w-auto max-w-none object-contain" />}</td>}
+            {i >= mulaKanan && (() => { const [l, v] = kanan[i - mulaKanan]; return <><td className="p-0 pr-[2mm] text-[13px] whitespace-nowrap">{l}</td><td className="p-0 pr-[1.5mm] text-[13px]">:</td><td className="p-0 text-[13px] whitespace-nowrap">{v}</td></> })()}
           </tr>
         ))}
       </tbody>
     </table>
+    </Skala>
   )
 }
 

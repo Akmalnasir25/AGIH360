@@ -24,4 +24,6 @@
   .no-print { display: none !important; }
   body { background: white; }
   .page-break { break-after: page; }
+  @page { size: A4; margin: 14mm 0; }
+  main { padding: 0 !important; max-width: none !important; }
 }

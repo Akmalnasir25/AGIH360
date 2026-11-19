@@ -120,7 +120,8 @@ async function kepalaWord(s: Sekolah, mod: ModKepalaDok, lebarPx: number) {
   const mula = baris.length - kanan.length
   const p = (t: string, saiz: number, tebal = false) => new Paragraph({ children: [new TextRun({ text: t, size: saiz, bold: tebal, font: 'Calibri' })] })
   const sel = (c: ConstructorParameters<typeof TableCell>[0]) => new TableCell({ borders: tanpa, ...c })
-  const lebar = [1979, 5309, 900, 271, 2611]
+  // Nisbah lajur ikut contoh rasmi, diskala supaya muat ruang taip halaman (1px ≈ 15 twip)
+  const lebar = [1979, 5309, 900, 271, 2611].map((x) => Math.floor((x * lebarPx * 15) / 11070))
   const jata = await gambar('/jata-negara.jpg', 82)
   const logo = await gambar(s.logo_url, 70, AlignmentType.RIGHT)
   const rows = baris.map((t, i) => new TableRow({ children: [

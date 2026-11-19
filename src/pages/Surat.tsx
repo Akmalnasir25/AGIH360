@@ -8,6 +8,7 @@ import { pautanWhatsApp } from '../components/ui'
 import { teksTugas } from '../components/SejarahGuru'
 import { NotifikasiEmel } from '../components/NotifikasiEmel'
 import { boleh } from '../lib/kuasa'
+import { Skala } from '../components/SkalaA4'
 import { KepalaSurat, PilihKepala, useModKepala, type ModKepala } from '../components/KepalaSurat'
 
 export default function Surat() {
@@ -48,7 +49,7 @@ export default function Surat() {
         <p className="text-[11px] text-navy-400 mt-2">Jika tarikh berkuat kuasa dikosongkan, surat menyebut "mulai tarikh surat ini sehingga dimaklumkan kelak". Butiran ini diingati dalam pelayar ini.</p>
       </div>
       {emel && <NotifikasiEmel tutup={() => setEmel(false)} />}
-      <div className="grid xl:grid-cols-[260px_1fr] gap-5">
+      <div className="grid xl:grid-cols-[260px_1fr] gap-5 print:block">
         <div className="kad p-3 h-fit xl:sticky xl:top-6 no-print">
           <div className="relative mb-2"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" /><input className="input pl-9" placeholder="Tapis guru…" value={cari} onChange={(e) => setCari(e.target.value)} /></div>
           <div className="text-xs text-navy-500 px-1 mb-2">{pilih.size ? `${pilih.size} dipilih` : 'Tiada dipilih = cetak semua'}{pilih.size > 0 && <button className="ml-2 text-brand-600 font-semibold" onClick={() => setPilih(new Set())}>reset</button>}</div>
@@ -112,7 +113,8 @@ export function SatuSurat({ k, guruId, mod, butiran }: { k: Konteks; guruId: str
     : 'Berkuat kuasa mulai tarikh surat ini sehingga dimaklumkan kelak.'
   const sk = bt.sk.split(/\r?\n/).map((x) => x.trim()).filter(Boolean)
   return (
-    <div className="relative overflow-hidden bg-white shadow-card print:shadow-none rounded-2xl print:rounded-none px-10 py-8 sm:px-14 sm:py-10 text-[13px] leading-relaxed text-black page-break font-[Arial,sans-serif]">
+    <Skala className="page-break">
+    <div className="relative overflow-hidden bg-white shadow-card print:shadow-none w-[210mm] min-h-[297mm] print:min-h-0 px-[22mm] py-[16mm] print:py-0 text-[13px] leading-relaxed text-black font-[Arial,sans-serif]">
       {draf && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><span className="text-[120px] font-black text-rose-500/10 -rotate-[30deg] [print-color-adjust:exact]">DRAF</span></div>}
       <KepalaSurat s={s} mod={mod ?? 'logo'} />
       <table className="mt-4 ml-auto"><tbody>
@@ -147,6 +149,7 @@ export function SatuSurat({ k, guruId, mod, butiran }: { k: Konteks; guruId: str
         <div className="mt-6 text-[12px] flex gap-2"><span>s.k.</span><div>{sk.map((x, i) => <div key={i}>- {x}</div>)}</div></div>
       )}
     </div>
+    </Skala>
   )
 }
 
