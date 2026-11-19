@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Sekolah } from '../lib/types'
+import { emelRasmi, isiKepala } from '../lib/kepala'
 
 export type ModKepala = 'kosong' | 'logo' | 'imej'
 
@@ -37,28 +38,30 @@ export function PilihKepala({ mod, set, s }: { mod: ModKepala; set: (m: ModKepal
   )
 }
 
-export const emelSekolah = (s: Sekolah) => `${s.kod}@moe.edu.my`
+export const emelSekolah = (s: Sekolah) => emelRasmi(s)
 
-/** Kepala dokumen bercetak. Mod 'logo' = format rasmi KPM (Jata | KPM & maklumat sekolah | logo sekolah). */
+/** Kepala dokumen bercetak. Mod 'logo' = format rasmi KPM:
+ *  Jata | KEMENTERIAN PENDIDIKAN, nama, alamat, negeri, kod (rata kiri) | Telefon/Faks/Email sebaris 3 baris akhir; logo sekolah kanan atas. */
 export function KepalaSurat({ s, mod }: { s: Sekolah; mod: ModKepala }) {
   if (mod === 'kosong') return <div className="h-[32mm]" aria-hidden />
   if (mod === 'imej' && s.kepala_surat) return <img src={s.kepala_surat} alt={s.nama} className="block w-full h-auto" />
-  const alamat = [s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ')
+  const { kiri, kanan } = isiKepala(s)
+  const baris = ['KEMENTERIAN PENDIDIKAN', ...kiri]
+  const mulaKanan = baris.length - kanan.length
   return (
-    <div className="font-[Arial,sans-serif]">
-      <div className="flex items-center gap-3">
-        <img src="/jata-negara.jpg" alt="Jata Negara" className="h-[22mm] w-[26mm] object-contain shrink-0" />
-        <div className="flex-1 text-left leading-snug pl-1">
-          <div className="font-bold text-[14px]">KEMENTERIAN PENDIDIKAN</div>
-          <div className="font-bold text-[13px]">{s.nama}</div>
-          {alamat && <div className="text-[11px]">{alamat}</div>}
-          <div className="text-[11px]">Kod Sekolah: {s.kod}{s.telefon ? ` · Telefon: ${s.telefon}` : ''}</div>
-          <div className="text-[11px]">E-mel: {emelSekolah(s)}</div>
-        </div>
-        {s.logo_url ? <img src={s.logo_url} alt="" className="h-[24mm] w-[24mm] object-contain shrink-0" /> : <div className="w-[24mm] shrink-0" />}
-      </div>
-      <div className="mt-2 border-b-2 border-dotted border-black" />
-    </div>
+    <table className="w-full border-collapse font-[Calibri,Carlito,Arial,sans-serif] text-black leading-[1.15]">
+      <colgroup><col style={{ width: '18%' }} /><col /><col style={{ width: '9%' }} /><col style={{ width: '2%' }} /><col style={{ width: '24%' }} /></colgroup>
+      <tbody>
+        {baris.map((t, i) => (
+          <tr key={i}>
+            {i === 0 && <td rowSpan={baris.length} className="align-middle p-0 pr-2"><img src="/jata-negara.jpg" alt="Jata Negara" className="h-[23mm] w-auto object-contain" /></td>}
+            <td className={`p-0 text-[16px] whitespace-nowrap ${i === 0 ? 'font-bold' : ''}`}>{t}</td>
+            {i === 0 && mulaKanan > 0 && <td colSpan={3} rowSpan={mulaKanan} className="p-0 align-top text-right">{s.logo_url && <img src={s.logo_url} alt="" className="inline-block h-[19mm] w-auto object-contain" />}</td>}
+            {i >= mulaKanan && (() => { const [l, v] = kanan[i - mulaKanan]; return <><td className="p-0 text-[13px]">{l}</td><td className="p-0 text-[13px]">:</td><td className="p-0 text-[13px] whitespace-nowrap">{v}</td></> })()}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   )
 }
 

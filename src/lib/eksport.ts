@@ -2,6 +2,7 @@ import { paletIkut, warnaBahagian, type RekaBuku } from './tema'
 import type { KumpulanGuruBuku } from './buku'
 import type { Konteks } from './indeks'
 import type { Sekolah } from './types'
+import { isiKepala } from './kepala'
 
 /** Struktur senarai jawatankuasa sedia untuk dieksport */
 export interface BarisAhli { jawatan: string; nama: string[] }  // nama[] > 1 bila peranan sama digabung (cth AJK)
@@ -98,7 +99,7 @@ async function kepalaWord(s: Sekolah, mod: ModKepalaDok, lebarPx: number) {
   const { Table, TableRow, TableCell, WidthType, VerticalAlign } = await import('docx')
   const tiada = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
   const tanpa = { top: tiada, bottom: tiada, left: tiada, right: tiada, insideHorizontal: tiada, insideVertical: tiada }
-  const gambar = async (url: string | null, tinggi: number) => {
+  const gambar = async (url: string | null, tinggi: number, jajar: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.CENTER) => {
     if (!url) return new Paragraph({ children: [] })
     try {
       let dataUrl = url
@@ -108,29 +109,32 @@ async function kepalaWord(s: Sekolah, mod: ModKepalaDok, lebarPx: number) {
       }
       const { bait, jenis } = dataUrlKeBait(dataUrl)
       const { w, h } = await saizImej(dataUrl)
-      return new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: jenis, data: bait, transformation: { width: Math.round((w / h) * tinggi), height: tinggi } })] })
+      return new Paragraph({ alignment: jajar, children: [new ImageRun({ type: jenis, data: bait, transformation: { width: Math.round((w / h) * tinggi), height: tinggi } })] })
     } catch {
       return new Paragraph({ children: [] })  // imej gagal dimuat — dokumen tetap dijana
     }
   }
-  const alamat = [s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ')
-  const baris = (t: string, saiz: number, tebal = false) => new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: t, size: saiz, bold: tebal })] })
-  const tengah = [
-    baris('KEMENTERIAN PENDIDIKAN', 24, true),
-    baris(s.nama, 22, true),
-    ...(alamat ? [baris(alamat, 18)] : []),
-    baris(`Kod Sekolah: ${s.kod}${s.telefon ? `  ·  Telefon: ${s.telefon}` : ''}`, 18),
-    baris(`E-mel: ${s.kod}@moe.edu.my`, 18),
-  ]
-  const jadual = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE }, borders: tanpa, columnWidths: [1700, 6300, 1700],
-    rows: [new TableRow({ children: [
-      new TableCell({ borders: tanpa, verticalAlign: VerticalAlign.CENTER, width: { size: 17, type: WidthType.PERCENTAGE }, children: [await gambar('/jata-negara.jpg', 75)] }),
-      new TableCell({ borders: tanpa, verticalAlign: VerticalAlign.CENTER, width: { size: 66, type: WidthType.PERCENTAGE }, children: tengah }),
-      new TableCell({ borders: tanpa, verticalAlign: VerticalAlign.CENTER, width: { size: 17, type: WidthType.PERCENTAGE }, children: [await gambar(s.logo_url, 85)] }),
-    ] })],
-  })
-  return [jadual, new Paragraph({ spacing: { after: 240 }, border: { bottom: { style: BorderStyle.DOTTED, size: 12, color: '000000', space: 4 } }, children: [] })]
+  // Susunan rasmi: 5 lajur (Jata | teks | label | : | nilai), maklumat hubungan sebaris 3 baris terakhir
+  const { kiri, kanan } = isiKepala(s)
+  const baris = ['KEMENTERIAN PENDIDIKAN', ...kiri]
+  const mula = baris.length - kanan.length
+  const p = (t: string, saiz: number, tebal = false) => new Paragraph({ children: [new TextRun({ text: t, size: saiz, bold: tebal, font: 'Calibri' })] })
+  const sel = (c: ConstructorParameters<typeof TableCell>[0]) => new TableCell({ borders: tanpa, ...c })
+  const lebar = [1979, 5309, 900, 271, 2611]
+  const jata = await gambar('/jata-negara.jpg', 82)
+  const logo = await gambar(s.logo_url, 70, AlignmentType.RIGHT)
+  const rows = baris.map((t, i) => new TableRow({ children: [
+    ...(i === 0 ? [sel({ rowSpan: baris.length, verticalAlign: VerticalAlign.CENTER, width: { size: lebar[0], type: WidthType.DXA }, children: [jata] })] : []),
+    sel({ width: { size: lebar[1], type: WidthType.DXA }, children: [p(t, 24, i === 0)] }),
+    ...(i === 0 && mula > 0 ? [sel({ columnSpan: 3, rowSpan: mula, verticalAlign: VerticalAlign.TOP, width: { size: lebar[2] + lebar[3] + lebar[4], type: WidthType.DXA }, children: [logo] })] : []),
+    ...(i >= mula ? [
+      sel({ width: { size: lebar[2], type: WidthType.DXA }, children: [p(kanan[i - mula][0], 20)] }),
+      sel({ width: { size: lebar[3], type: WidthType.DXA }, children: [p(':', 20)] }),
+      sel({ width: { size: lebar[4], type: WidthType.DXA }, children: [p(kanan[i - mula][1], 20)] }),
+    ] : []),
+  ] }))
+  const jadual = new Table({ width: { size: lebar.reduce((a, b) => a + b, 0), type: WidthType.DXA }, borders: tanpa, columnWidths: lebar, rows })
+  return [jadual, new Paragraph({ spacing: { after: 240 }, children: [] })]
 }
 
 /** Kaki halaman Word: nama sekolah · nombor muka surat. */

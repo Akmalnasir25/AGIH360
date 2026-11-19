@@ -24,10 +24,31 @@ export default function Tetapan() {
 
   return (
     <div className="animate-naik">
-      <TajukHalaman tajuk="Tetapan Pemberat" sub="Semua pemberat boleh diubah ikut keputusan mesyuarat sekolah. Indeks dikira semula serta-merta."
+      <TajukHalaman tajuk="Tetapan" sub="Maklumat sekolah untuk surat & dokumen, pemberat indeks beban tugas, bidang dan pengguna."
         tindakan={<button onClick={simpanUmum} className="btn-utama"><Save size={16} /> {disimpan ? 'Disimpan ✓' : 'Simpan tetapan'}</button>} />
 
       <div className="grid lg:grid-cols-2 gap-5">
+        <div className="kad p-5">
+          <h3 className="font-bold">Maklumat Sekolah</h3>
+          <p className="text-xs text-navy-500 mb-4">Digunakan dalam kepala surat format KPM, Surat Lantikan, Senarai AJK &amp; Buku Pengurusan.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2"><label className="label">Nama sekolah</label><input className="input" value={s.nama} onChange={(e) => setS({ ...s, nama: e.target.value })} /></div>
+            <div className="col-span-2"><label className="label">Alamat (satu baris = satu baris kepala surat)</label><textarea rows={3} className="input" value={s.alamat ?? ''} onChange={(e) => setS({ ...s, alamat: e.target.value })} placeholder={'Jalan / Kampung / Taman\n31500 Lahat'} /><div className="text-[11px] text-navy-400 mt-1">Baris terakhir biasanya poskod + bandar. Negeri ditambah automatik dalam bentuk penuh (cth. Perak Darul Ridzuan).</div></div>
+            <div><label className="label">Daerah</label><input className="input" value={s.daerah ?? ''} onChange={(e) => setS({ ...s, daerah: e.target.value })} /></div>
+            <div><label className="label">Negeri</label><input className="input" value={s.negeri ?? ''} onChange={(e) => setS({ ...s, negeri: e.target.value })} /></div>
+            <div><label className="label">Nama {s.jawatan_ketua ?? 'Guru Besar'}</label><input className="input" value={s.nama_ketua ?? ''} onChange={(e) => setS({ ...s, nama_ketua: e.target.value })} /></div>
+            <div><label className="label">Sesi semasa</label><input type="number" className="input" value={s.tahun_semasa} onChange={(e) => setS({ ...s, tahun_semasa: Number(e.target.value) })} /></div>
+            <div><label className="label">No. telefon sekolah</label><input className="input" value={s.telefon ?? ''} onChange={(e) => setS({ ...s, telefon: e.target.value })} placeholder="cth. 05-321 6399" /></div>
+            <div><label className="label">No. faks (pilihan)</label><input className="input" value={s.faks ?? ''} onChange={(e) => setS({ ...s, faks: e.target.value })} placeholder="cth. 05-321 3563" /></div>
+            <div className="col-span-2"><label className="label">E-mel rasmi sekolah</label><input className="input" value={s.emel ?? ''} onChange={(e) => setS({ ...s, emel: e.target.value })} placeholder={`${s.kod}@moe.edu.my`} /></div>
+          </div>
+          <div className="mt-5 pt-4 border-t border-navy-100 space-y-4">
+            <div className="text-xs text-navy-500">Untuk cetakan <b>Surat Lantikan</b> &amp; <b>Senarai AJK</b>. Tekan <b>Simpan tetapan</b> selepas memuat naik.</div>
+            <MuatImej label="Logo sekolah" nota="PNG/JPG segi empat. Dipapar di sebelah nama sekolah." nilai={s.logo_url} set={(v) => setS({ ...s, logo_url: v })} lebar={400} jenis="image/png" had={550000} kelas="h-20 w-20 object-contain" />
+            <MuatImej label="Imej kepala surat penuh (pilihan)" nota="Hanya jika sekolah ada kepala surat siap (imej melintang, cth. 2000×400 px). Tidak perlu jika guna mod Format KPM — Jata Negara & logo sekolah dijana automatik." nilai={s.kepala_surat ?? null} set={(v) => setS({ ...s, kepala_surat: v })} lebar={2000} jenis="image/jpeg" had={1400000} kelas="w-full max-h-28 object-contain object-left" melintang />
+          </div>
+        </div>
+
         <div className="kad p-5">
           <h3 className="font-bold">Formula Indeks</h3>
           <p className="text-xs text-navy-500 mb-4">Indeks = w × nisbah mengajar + (1 − w) × nisbah tugas</p>
@@ -44,24 +65,6 @@ export default function Tetapan() {
             <Nombor label="Had jawatan seorang guru" v={t.had_jawatan} set={(v) => setT({ ...t, had_jawatan: v })} step={1} />
           </div>
           <label className="flex items-center gap-2 text-sm mt-4"><input type="checkbox" className="accent-brand-500 h-4 w-4" checked={t.guna_faktor_gred} onChange={(e) => setT({ ...t, guna_faktor_gred: e.target.checked })} /> Ambil kira gred (gred tinggi dijangka memikul lebih)</label>
-        </div>
-
-        <div className="kad p-5">
-          <h3 className="font-bold mb-4">Maklumat Sekolah (untuk surat)</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2"><label className="label">Nama sekolah</label><input className="input" value={s.nama} onChange={(e) => setS({ ...s, nama: e.target.value })} /></div>
-            <div className="col-span-2"><label className="label">Alamat</label><input className="input" value={s.alamat ?? ''} onChange={(e) => setS({ ...s, alamat: e.target.value })} /></div>
-            <div><label className="label">Daerah</label><input className="input" value={s.daerah ?? ''} onChange={(e) => setS({ ...s, daerah: e.target.value })} /></div>
-            <div><label className="label">Negeri</label><input className="input" value={s.negeri ?? ''} onChange={(e) => setS({ ...s, negeri: e.target.value })} /></div>
-            <div><label className="label">Nama {s.jawatan_ketua ?? 'Guru Besar'}</label><input className="input" value={s.nama_ketua ?? ''} onChange={(e) => setS({ ...s, nama_ketua: e.target.value })} /></div>
-            <div><label className="label">Sesi semasa</label><input type="number" className="input" value={s.tahun_semasa} onChange={(e) => setS({ ...s, tahun_semasa: Number(e.target.value) })} /></div>
-            <div className="col-span-2"><label className="label">No. telefon sekolah</label><input className="input" value={s.telefon ?? ''} onChange={(e) => setS({ ...s, telefon: e.target.value })} placeholder="cth. 06-123 4567" /></div>
-          </div>
-          <div className="mt-5 pt-4 border-t border-navy-100 space-y-4">
-            <div className="text-xs text-navy-500">Untuk cetakan <b>Surat Lantikan</b> &amp; <b>Senarai AJK</b>. Tekan <b>Simpan tetapan</b> selepas memuat naik.</div>
-            <MuatImej label="Logo sekolah" nota="PNG/JPG segi empat. Dipapar di sebelah nama sekolah." nilai={s.logo_url} set={(v) => setS({ ...s, logo_url: v })} lebar={400} jenis="image/png" had={550000} kelas="h-20 w-20 object-contain" />
-            <MuatImej label="Imej kepala surat penuh (pilihan)" nota="Hanya jika sekolah ada kepala surat siap (imej melintang, cth. 2000×400 px). Tidak perlu jika guna mod Format KPM — Jata Negara & logo sekolah dijana automatik." nilai={s.kepala_surat ?? null} set={(v) => setS({ ...s, kepala_surat: v })} lebar={2000} jenis="image/jpeg" had={1400000} kelas="w-full max-h-28 object-contain object-left" melintang />
-          </div>
         </div>
 
         <UrusBidang />

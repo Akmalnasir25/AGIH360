@@ -24,7 +24,7 @@ const MENU: { ke: string; label: string; ikon: typeof Users; perlu: Tindakan | n
   { ke: '/app/eksport', label: 'Jana Dokumen', ikon: FileDown, perlu: 'eksport' },
   { ke: '/app/buku', label: 'Buku Pengurusan', ikon: BookOpen, perlu: 'buku' },
   { ke: '/app/surat', label: 'Surat Lantikan', ikon: FileText, perlu: 'surat' },
-  { ke: '/app/tetapan', label: 'Tetapan Pemberat', ikon: Settings, perlu: 'urus_tetapan' },
+  { ke: '/app/tetapan', label: 'Tetapan', ikon: Settings, perlu: 'urus_tetapan' },
   { ke: '/app/tugas-saya', label: 'Tugas Saya', ikon: UserRound, perlu: null },
 ]
 

@@ -1,4 +1,5 @@
 import type { Sekolah } from './types'
+import { barisAlamat } from './kepala'
 
 /** Teks rasmi peringkat kebangsaan — sama untuk semua sekolah. */
 const FALSAFAH = `FALSAFAH PENDIDIKAN KEBANGSAAN
@@ -45,7 +46,7 @@ export function seksyenLalai(s: Sekolah, bilGuru = 0): { tajuk: string; isi: str
   const ketua = s.jawatan_ketua ?? (s.jenis === 'SK' ? 'Guru Besar' : 'Pengetua')
   const maklumat = [
     `Nama Sekolah: ${s.nama} (${s.kod})`,
-    `Alamat Sekolah: ${[s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ') || '[isi alamat]'}`,
+    `Alamat Sekolah: ${[...barisAlamat(s.alamat), s.negeri].filter(Boolean).join(', ') || '[isi alamat]'}`,
     `No. Telefon: ${s.telefon || '[isi no. telefon]'}`,
     `E-mel (Rasmi Sekolah): ${s.kod}@moe.edu.my`,
     `Jabatan Pendidikan Negeri: ${s.negeri ? `Jabatan Pendidikan Negeri ${s.negeri}` : '[isi JPN]'}`,

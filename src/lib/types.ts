@@ -16,6 +16,9 @@ export interface Sekolah {
   /** Pilihan reka bentuk Buku Pengurusan (lihat lib/tema.ts) */
   reka_buku?: unknown
   telefon?: string | null
+  faks?: string | null
+  /** E-mel rasmi sekolah (lalai: KOD@moe.edu.my) */
+  emel?: string | null
   nama_ketua: string | null
   jawatan_ketua: string | null
   tahun_semasa: number
