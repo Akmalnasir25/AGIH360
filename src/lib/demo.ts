@@ -220,12 +220,12 @@ export class StorDemo implements Stor {
       this.log('gugur', `${this.d.guru.find((g) => g.id === l.guru_id)?.nama} — ${l.peranan_nama}, ${l.jk_nama}`)
     this.d.lantikan = this.d.lantikan.filter((l) => !(set.has(l.slot_id) && l.tahun === this.tahun))
   }
-  async tambahAhli(jkId: string, perananId: string, guruIds: string[]) {
+  async tambahAhli(jkId: string, perananId: string, guruIds: string[], label: string | null = null) {
     this.strukturSahaja(); this.kunci()
     let n = Math.max(0, ...this.d.slot.filter((s) => s.jawatankuasa_id === jkId).map((s) => s.susunan))
     const pasangan = guruIds.map((guruId) => {
       const id = uid()
-      this.d.slot.push({ id, jawatankuasa_id: jkId, peranan_id: perananId, label: null, susunan: ++n })
+      this.d.slot.push({ id, jawatankuasa_id: jkId, peranan_id: perananId, label, susunan: ++n })
       return { slotId: id, guruId }
     })
     await this.lantikBanyak(pasangan)

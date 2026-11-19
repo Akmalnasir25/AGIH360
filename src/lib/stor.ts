@@ -14,7 +14,7 @@ export interface Stor {
   batal(slotId: string): Promise<void>
   batalBanyak(slotIds: string[]): Promise<void>
   /** Cipta slot baharu (peranan sama) untuk setiap guru dan lantik terus. */
-  tambahAhli(jkId: string, perananId: string, guruIds: string[]): Promise<void>
+  tambahAhli(jkId: string, perananId: string, guruIds: string[], label?: string | null): Promise<void>
   simpan(jadual: NamaJadual, baris: Baris): Promise<string>
   simpanBanyak(jadual: NamaJadual, baris: Baris[]): Promise<void>
   buang(jadual: NamaJadual, id: string): Promise<void>

@@ -94,13 +94,13 @@ export class StorSupabase implements Stor {
     const tahun = await this.tahun()
     semak(await sb().from('lantikan').delete().in('slot_id', slotIds).eq('tahun', tahun).select('id'))
   }
-  async tambahAhli(jkId: string, perananId: string, guruIds: string[]) {
+  async tambahAhli(jkId: string, perananId: string, guruIds: string[], label: string | null = null) {
     if (!guruIds.length) return
     const c = sb()
     const ada = (semak(await c.from('slot').select('susunan').eq('jawatankuasa_id', jkId).order('susunan', { ascending: false }).limit(1)) ?? []) as { susunan: number }[]
     let n = ada[0]?.susunan ?? 0
     const baru = (semak(await c.from('slot').insert(
-      guruIds.map(() => ({ school_id: this.schoolId, jawatankuasa_id: jkId, peranan_id: perananId, label: null, susunan: ++n })),
+      guruIds.map(() => ({ school_id: this.schoolId, jawatankuasa_id: jkId, peranan_id: perananId, label, susunan: ++n })),
     ).select('id,susunan').order('susunan')) ?? []) as { id: string; susunan: number }[]
     await this.lantikBanyak(baru.map((s, i) => ({ slotId: s.id, guruId: guruIds[i] })))
   }

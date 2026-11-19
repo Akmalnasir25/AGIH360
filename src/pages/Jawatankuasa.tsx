@@ -200,6 +200,7 @@ function PanelJK({ jk, slotAktif, pilihSlot, lantik, urus, terkunci, tambahAhli,
 }) {
   const { k, ubah, simulasi } = useAplikasi()
   const [bukaPentadbir, setBukaPentadbir] = useState(false)
+  const [suntingSlot, setSuntingSlot] = useState<string | null>(null)
   if (!k) return null
   const d = k.data
   const b = d.bidang.find((x) => x.id === jk.bidang_id)
@@ -239,7 +240,7 @@ function PanelJK({ jk, slotAktif, pilihSlot, lantik, urus, terkunci, tambahAhli,
       </div>
 
       <div className="flex items-center gap-3 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-navy-400 bg-navy-50/60">
-        <span className="flex-1">Jawatan · Guru</span><span className="w-16 text-right" title="Indeks beban guru (1.00 = purata) · mata jawatan ini">Indeks</span><span className="w-5" />
+        <span className="flex-1">Jawatan · Guru</span><span className="w-16 text-right" title="Indeks beban guru (1.00 = purata) · mata jawatan ini">Indeks</span><span className="w-11" />
       </div>
 
       <div className="divide-y divide-navy-50">
@@ -281,13 +282,19 @@ function PanelJK({ jk, slotAktif, pilihSlot, lantik, urus, terkunci, tambahAhli,
                 <div className={`font-mono text-sm ${h?.status === 'terbeban' ? 'text-rose-600 font-bold' : 'text-navy-700'}`}>{h ? f2(h.indeks) : '—'}</div>
                 <div className="font-mono text-[10px] text-navy-400">{f1(k.skorSlot.get(s.id) ?? 0)} mata</div>
               </div>
-              {urus ? <button title="Buang jawatan ini" onClick={(e) => { e.stopPropagation(); buangSlot(s.id, label, g?.nama) }} className="w-5 opacity-0 group-hover:opacity-100 p-0.5 text-navy-300 hover:text-rose-600"><X size={14} /></button> : <span className="w-5" />}
+              {urus ? (
+                <div className="w-11 shrink-0 flex opacity-0 group-hover:opacity-100">
+                  <button title="Sunting jawatan (peranan / keterangan)" onClick={(e) => { e.stopPropagation(); setSuntingSlot(s.id) }} className="p-0.5 text-navy-300 hover:text-navy-700"><Pencil size={14} /></button>
+                  <button title="Buang jawatan ini" onClick={(e) => { e.stopPropagation(); buangSlot(s.id, label, g?.nama) }} className="p-0.5 text-navy-300 hover:text-rose-600"><X size={14} /></button>
+                </div>
+              ) : <span className="w-11" />}
             </div>
           )
         })}
         {slot.length === 0 && <p className="px-4 py-6 text-sm text-navy-400 text-center">Belum ada jawatan. Tambah di bawah.</p>}
       </div>
 
+      {suntingSlot && <SuntingSlot slotId={suntingSlot} tutup={() => setSuntingSlot(null)} />}
       {(urus || (lantik && !simulasi)) && (
         <div className="p-3 border-t border-navy-100 bg-navy-50/40 flex flex-wrap items-center gap-2">
           {lantik && !simulasi && <button onClick={tambahAhli} className="btn-utama py-1.5 text-xs"><Users size={14} /> Tambah ramai ahli</button>}
@@ -486,6 +493,31 @@ function SuntingJK({ jk, tutup }: { jk: Partial<JK>; tutup: () => void }) {
           {!baru ? <button onClick={arkib} className="btn text-rose-600 hover:bg-rose-50"><Archive size={15} /> Buang JK</button> : <span />}
           <div className="flex gap-2"><button onClick={tutup} className="btn-hantu">Batal</button><button disabled={sibuk} onClick={simpan} className="btn-utama"><Sparkles size={15} /> Simpan</button></div>
         </div>
+      </div>
+    </Modal>
+  )
+}
+
+/** Tukar peranan & keterangan (label) satu jawatan. */
+function SuntingSlot({ slotId, tutup }: { slotId: string; tutup: () => void }) {
+  const { k, ubah } = useAplikasi()
+  const sl = k?.data.slot.find((x) => x.id === slotId)
+  const [perananId, setPerananId] = useState(sl?.peranan_id ?? '')
+  const [label, setLabel] = useState(sl?.label ?? '')
+  const [sibuk, setSibuk] = useState(false)
+  if (!k || !sl) return null
+  const simpan = async () => {
+    setSibuk(true)
+    try { await ubah((s) => s.simpan('slot', { id: sl.id, peranan_id: perananId, label: label.trim() || null })); tutup() } finally { setSibuk(false) }
+  }
+  return (
+    <Modal buka tutup={tutup} tajuk="Sunting jawatan" sub="Peranan menentukan mata beban; keterangan dipaparkan sebagai nama jawatan (cth. acara, rumah, tahun)." lebar="max-w-lg">
+      <div className="space-y-3">
+        <div><label className="label">Peranan</label>
+          <select className="input" value={perananId} onChange={(e) => setPerananId(e.target.value)}>{k.data.peranan.map((p) => <option key={p.id} value={p.id}>{p.nama} (×{p.berat})</option>)}</select></div>
+        <div><label className="label">Keterangan (pilihan)</label>
+          <input autoFocus className="input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="cth. Pidato BM (Ketua)" /></div>
+        <div className="flex justify-end gap-2 pt-2"><button onClick={tutup} className="btn-hantu">Batal</button><button disabled={sibuk} onClick={simpan} className="btn-utama"><Sparkles size={15} /> Simpan</button></div>
       </div>
     </Modal>
   )

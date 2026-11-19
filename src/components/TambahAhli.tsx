@@ -15,6 +15,7 @@ export function TambahAhli({ jkId, tutup }: { jkId: string; tutup: () => void })
   const [pilih, setPilih] = useState<string[]>([])
   const [perananId, setPerananId] = useState<string>(() => k?.data.peranan.find((p) => p.nama === 'AJK')?.id ?? k?.data.peranan[0]?.id ?? '')
   const [sibuk, setSibuk] = useState(false)
+  const [label, setLabel] = useState('')
 
   const jk = k?.data.jawatankuasa.find((j) => j.id === jkId)
   const skorSatu = useMemo(() => {
@@ -45,21 +46,28 @@ export function TambahAhli({ jkId, tutup }: { jkId: string; tutup: () => void })
   const tog = (id: string) => setPilih((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   const simpan = async () => {
     setSibuk(true)
-    try { await ubah((s) => s.tambahAhli(jkId, perananId, pilih)); tutup() } finally { setSibuk(false) }
+    try { await ubah((s) => s.tambahAhli(jkId, perananId, pilih, label.trim() || null)); tutup() } finally { setSibuk(false) }
   }
   const tersaring = calon.filter((c) => !cari || c.g.nama.toLowerCase().includes(cari.toLowerCase()))
 
   return (
     <Modal buka tutup={tutup} lebar="max-w-3xl" tajuk={<span className="flex items-center gap-2"><Users size={20} className="text-brand-600" />Tambah ahli · <span className="text-brand-600">{jk.nama}</span></span>}
       sub="Tanda seberapa ramai guru. Jawatan baharu dicipta automatik untuk setiap seorang.">
-      <div className="flex flex-col sm:flex-row gap-2 mb-3">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" />
-          <input autoFocus className="input pl-9" placeholder="Cari nama guru…" value={cari} onChange={(e) => setCari(e.target.value)} />
+      <div className="grid sm:grid-cols-2 gap-3 mb-3 rounded-2xl bg-navy-50/70 p-3">
+        <div>
+          <label className="label">1. Lantik sebagai</label>
+          <select className="input" value={perananId} onChange={(e) => setPerananId(e.target.value)}>
+            {k.data.peranan.map((p) => <option key={p.id} value={p.id}>{p.nama} (×{p.berat})</option>)}
+          </select>
         </div>
-        <select className="input sm:w-56" value={perananId} onChange={(e) => setPerananId(e.target.value)}>
-          {k.data.peranan.map((p) => <option key={p.id} value={p.id}>Sebagai {p.nama} (×{p.berat})</option>)}
-        </select>
+        <div>
+          <label className="label">2. Keterangan / acara (pilihan)</label>
+          <input className="input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="cth. Pidato BM (Ketua), Rumah Biru" />
+        </div>
+      </div>
+      <div className="relative mb-3">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" />
+        <input autoFocus className="input pl-9" placeholder="3. Cari & tanda guru…" value={cari} onChange={(e) => setCari(e.target.value)} />
       </div>
       <p className="text-xs text-navy-500 mb-3 flex items-center gap-1.5"><Sparkles size={13} className="text-emas-500" /> Paling ringan di atas · kepakaran sepadan diutamakan · setiap jawatan = {skorSatu.toFixed(1)} mata</p>
       <div className="space-y-1.5 max-h-[50vh] overflow-y-auto pr-1">
