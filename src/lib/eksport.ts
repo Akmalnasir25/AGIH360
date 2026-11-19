@@ -118,24 +118,40 @@ async function kepalaWord(s: Sekolah, mod: ModKepalaDok, lebarPx: number) {
   const { kiri, kanan } = isiKepala(s)
   const baris = ['KEMENTERIAN PENDIDIKAN', ...kiri]
   const mula = baris.length - kanan.length
-  const p = (t: string, saiz: number, tebal = false) => new Paragraph({ children: [new TextRun({ text: t, size: saiz, bold: tebal, font: 'Calibri' })] })
+  const p = (t: string, saiz: number, tebal = false) => new Paragraph({ children: [new TextRun({ text: t, size: saiz, bold: tebal, font: 'Times New Roman' })] })
   const sel = (c: ConstructorParameters<typeof TableCell>[0]) => new TableCell({ borders: tanpa, ...c })
   // Nisbah lajur ikut contoh rasmi, diskala supaya muat ruang taip halaman (1px ≈ 15 twip)
-  const lebar = [1979, 5309, 900, 271, 2611].map((x) => Math.floor((x * lebarPx * 15) / 11070))
-  const jata = await gambar('/jata-negara.jpg', 82)
-  const logo = await gambar(s.logo_url, 70, AlignmentType.RIGHT)
+  const lebar = [1979, 5309, 1000, 371, 2411].map((x) => Math.floor((x * lebarPx * 15) / 11070))
+  const jata = await gambar('/jata-negara.jpg', 92)
+  // Logo terapung (tidak menolak jarak baris), tengah atas blok Telefon/Faks/Email
+  const logo = await (async () => {
+    if (!s.logo_url) return new Paragraph({ children: [] })
+    try {
+      let dataUrl = s.logo_url
+      if (!dataUrl.startsWith('data:')) {
+        const blob = await (await fetch(dataUrl)).blob()
+        dataUrl = await new Promise<string>((ok) => { const r = new FileReader(); r.onload = () => ok(r.result as string); r.readAsDataURL(blob) })
+      }
+      const { bait, jenis } = dataUrlKeBait(dataUrl)
+      const { w, h } = await saizImej(dataUrl)
+      const { HorizontalPositionAlign, HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom, TextWrappingType } = await import('docx')
+      const tinggi = 66
+      return new Paragraph({ children: [new ImageRun({ type: jenis, data: bait, transformation: { width: Math.round((w / h) * tinggi), height: tinggi },
+        floating: { horizontalPosition: { relative: HorizontalPositionRelativeFrom.COLUMN, align: HorizontalPositionAlign.CENTER }, verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: -160000 }, wrap: { type: TextWrappingType.NONE }, allowOverlap: true } })] })
+    } catch { return new Paragraph({ children: [] }) }
+  })()
   const rows = baris.map((t, i) => new TableRow({ children: [
     ...(i === 0 ? [sel({ rowSpan: baris.length, verticalAlign: VerticalAlign.CENTER, width: { size: lebar[0], type: WidthType.DXA }, children: [jata] })] : []),
     sel({ width: { size: lebar[1], type: WidthType.DXA }, children: [p(t, 24, i === 0)] }),
     ...(i === 0 && mula > 0 ? [sel({ columnSpan: 3, rowSpan: mula, verticalAlign: VerticalAlign.TOP, width: { size: lebar[2] + lebar[3] + lebar[4], type: WidthType.DXA }, children: [logo] })] : []),
     ...(i >= mula ? [
-      sel({ width: { size: lebar[2], type: WidthType.DXA }, children: [p(kanan[i - mula][0], 20)] }),
-      sel({ width: { size: lebar[3], type: WidthType.DXA }, children: [p(':', 20)] }),
-      sel({ width: { size: lebar[4], type: WidthType.DXA }, children: [p(kanan[i - mula][1], 20)] }),
+      sel({ width: { size: lebar[2], type: WidthType.DXA }, children: [p(kanan[i - mula][0], 22)] }),
+      sel({ width: { size: lebar[3], type: WidthType.DXA }, children: [p(':', 22)] }),
+      sel({ width: { size: lebar[4], type: WidthType.DXA }, children: [p(kanan[i - mula][1], 22)] }),
     ] : []),
   ] }))
   const jadual = new Table({ width: { size: lebar.reduce((a, b) => a + b, 0), type: WidthType.DXA }, borders: tanpa, columnWidths: lebar, rows })
-  return [jadual, new Paragraph({ spacing: { after: 240 }, children: [] })]
+  return [jadual, new Paragraph({ spacing: { after: 240 }, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: 'A0A0A0', space: 4 } }, children: [] })]
 }
 
 /** Kaki halaman Word: nama sekolah · nombor muka surat. */

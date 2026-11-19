@@ -20,7 +20,7 @@ export function Skala({ lebar = LEBAR_A4, children, className = '' }: { lebar?: 
     return () => ro.disconnect()
   }, [lebar])
   return (
-    <div ref={luar} className={`w-full overflow-hidden print:!h-auto print:overflow-visible ${className}`} style={{ height: u.t || undefined }}>
+    <div ref={luar} className={`w-full overflow-x-clip print:!h-auto print:overflow-visible ${className}`} style={{ height: u.t || undefined }}>
       <div ref={dalam} className="print:!transform-none" style={{ width: lebar, transform: u.k < 1 ? `scale(${u.k})` : undefined, transformOrigin: 'top left' }}>{children}</div>
     </div>
   )

@@ -100,7 +100,7 @@ export function Kerangka() {
 
   return (
     <div className="min-h-screen lg:pl-64">
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 no-print">{sidebar}</aside>
+      <aside className="hidden lg:block fixed inset-y-0 left-0 z-30 w-64 no-print">{sidebar}</aside>
       {buka && (
         <div className="lg:hidden fixed inset-0 z-40 no-print">
           <div className="absolute inset-0 bg-navy-950/60" onClick={() => setBuka(false)} />

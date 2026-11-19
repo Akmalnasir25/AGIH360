@@ -63,7 +63,7 @@ export default function Surat() {
             ))}
           </div>
         </div>
-        <div className="space-y-6 print:space-y-0">
+        <div className="min-w-0 space-y-6 print:space-y-0">
           {cetak.slice(0, pilih.size ? undefined : 3).map((g, i) => <SatuSurat key={g.id} k={k} guruId={g.id} bil={i + 1} mod={mod} butiran={butiran} />)}
           {!pilih.size && cetak.length > 3 && <div className="no-print text-center text-sm text-navy-500">Pratonton 3 surat pertama · {cetak.length - 3} lagi akan dicetak</div>}
           <div className="hidden print:block">{!pilih.size && cetak.slice(3).map((g, i) => <SatuSurat key={g.id} k={k} guruId={g.id} bil={i + 4} mod={mod} butiran={butiran} />)}</div>
