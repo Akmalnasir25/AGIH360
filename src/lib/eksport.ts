@@ -133,6 +133,15 @@ async function kepalaWord(s: Sekolah, mod: ModKepalaDok, lebarPx: number) {
   return [jadual, new Paragraph({ spacing: { after: 240 }, border: { bottom: { style: BorderStyle.DOTTED, size: 12, color: '000000', space: 4 } }, children: [] })]
 }
 
+/** Kaki halaman Word: nama sekolah · nombor muka surat. */
+async function kakiWord(teks: string) {
+  const { Footer, Paragraph, TextRun, PageNumber, AlignmentType } = await import('docx')
+  return new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [
+    new TextRun({ text: `${teks}   |   Muka surat `, size: 16, color: '7A8BA6' }),
+    new TextRun({ children: [PageNumber.CURRENT], size: 16, bold: true, color: '3A557D' }),
+  ] })] })
+}
+
 // ───────────────────────── WORD (.docx) ─────────────────────────
 export async function keWord(s: Sekolah, data: BidangEksport[], mod: ModKepalaDok = 'logo') {
   const D = await import('docx')
@@ -189,6 +198,7 @@ export async function keWord(s: Sekolah, data: BidangEksport[], mod: ModKepalaDo
     styles: { default: { document: { run: { font: 'Arial', size: 20 } } } },
     sections: [{
       properties: { page: { margin: { top: 1000, bottom: 1000, left: 1100, right: 1100 } } },
+      footers: { default: await kakiWord(`${s.nama} · ${tajukDokumen(s, data)} ${s.tahun_semasa}`) },
       children: anak,
     }],
   })
@@ -438,7 +448,8 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
         { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal', run: { size: 22, bold: true, color: pl.utama } },
       ],
     },
-    sections: [{ properties: { page: { margin: { top: 1000, bottom: 1000, left: 1100, right: 1100 } } }, children: anak }],
+    sections: [{ properties: { page: { margin: { top: 1000, bottom: 1000, left: 1100, right: 1100 }, pageNumbers: { start: 0 } }, titlePage: true },
+      footers: { default: await kakiWord(`${s.nama} · Buku Pengurusan ${s.tahun_semasa}`) }, children: anak }],
   })
   await simpan(await Packer.toBlob(doc), `${s.kod}-Buku-Pengurusan-${s.tahun_semasa}.docx`)
 }

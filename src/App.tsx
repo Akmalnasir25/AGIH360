@@ -10,6 +10,7 @@ import Analisis from './pages/Analisis'
 import Guru from './pages/Guru'
 import Surat from './pages/Surat'
 import BukuPengurusan from './pages/BukuPengurusan'
+import PaparanJK from './pages/PaparanJK'
 import Eksport from './pages/Eksport'
 import Tetapan from './pages/Tetapan'
 import TugasSaya from './pages/TugasSaya'
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="/app" element={<Dilindungi />}>
             <Route index element={<Hanya t="lihat_pengurusan"><PapanPemuka /></Hanya>} />
             <Route path="jawatankuasa" element={<Hanya t="lihat_pengurusan"><Jawatankuasa /></Hanya>} />
+            <Route path="paparan-jk" element={<Hanya t="lihat_pengurusan"><PaparanJK /></Hanya>} />
             <Route path="amaran" element={<Hanya t="lihat_pengurusan"><Amaran /></Hanya>} />
             <Route path="analisis" element={<Hanya t="lihat_pengurusan"><Analisis /></Hanya>} />
             <Route path="guru" element={<Hanya t="urus_guru"><Guru /></Hanya>} />

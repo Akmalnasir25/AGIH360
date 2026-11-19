@@ -447,7 +447,7 @@ function PanelGuru({ slotId, tutupSlot, bolehLantik, selepasLantik }: { slotId: 
   )
 }
 
-function BtnBidang({ aktif, onClick, label, warna, kunci }: { aktif: boolean; onClick: () => void; label: string; warna?: string; kunci?: boolean }) {
+export function BtnBidang({ aktif, onClick, label, warna, kunci }: { aktif: boolean; onClick: () => void; label: string; warna?: string; kunci?: boolean }) {
   const w = warna ? WARNA_BIDANG[warna] : null
   return (
     <button onClick={onClick} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition flex items-center gap-2 ${aktif ? 'bg-navy-900 text-white shadow-card' : 'bg-white border border-navy-200 text-navy-600 hover:bg-navy-50'}`}>
@@ -456,7 +456,7 @@ function BtnBidang({ aktif, onClick, label, warna, kunci }: { aktif: boolean; on
   )
 }
 
-function SuntingJK({ jk, tutup }: { jk: Partial<JK>; tutup: () => void }) {
+export function SuntingJK({ jk, tutup }: { jk: Partial<JK>; tutup: () => void }) {
   const { k, ubah, peranan, bidangSaya } = useAplikasi()
   const [f, setF] = useState<Partial<JK>>(jk)
   const [sibuk, setSibuk] = useState(false)
@@ -520,7 +520,7 @@ function SuntingJK({ jk, tutup }: { jk: Partial<JK>; tutup: () => void }) {
 }
 
 /** Tukar peranan & keterangan (label) satu jawatan. */
-function SuntingSlot({ slotId, tutup }: { slotId: string; tutup: () => void }) {
+export function SuntingSlot({ slotId, tutup }: { slotId: string; tutup: () => void }) {
   const { k, ubah } = useAplikasi()
   const sl = k?.data.slot.find((x) => x.id === slotId)
   const [perananId, setPerananId] = useState(sl?.peranan_id ?? '')

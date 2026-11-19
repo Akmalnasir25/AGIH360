@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   AlertTriangle, BarChart3, BookOpen, KeyRound, ShieldCheck, ClipboardCheck, Dumbbell, FileDown, FileText, FlaskConical, LayoutDashboard, LogOut, Menu,
-  Network, Settings, Sparkles, UserRound, Users, X,
+  LayoutList, Network, Settings, Sparkles, UserRound, Users, X,
 } from 'lucide-react'
 import { useAplikasi } from '../context/Aplikasi'
 import { Logo, Modal } from './ui'
@@ -15,6 +15,7 @@ import { binaKonteks } from '../lib/indeks'
 const MENU: { ke: string; label: string; ikon: typeof Users; perlu: Tindakan | null; lencana?: 'amaran' }[] = [
   { ke: '/app', label: 'Dashboard', ikon: LayoutDashboard, perlu: 'lihat_pengurusan' },
   { ke: '/app/jawatankuasa', label: 'Agih Tugas', ikon: Network, perlu: 'lihat_pengurusan' },
+  { ke: '/app/paparan-jk', label: 'Paparan JK', ikon: LayoutList, perlu: 'lihat_pengurusan' },
   { ke: '/app/amaran', label: 'Amaran', ikon: AlertTriangle, perlu: 'lihat_pengurusan', lencana: 'amaran' },
   { ke: '/app/analisis', label: 'Analisis Beban', ikon: BarChart3, perlu: 'lihat_pengurusan' },
   { ke: '/app/guru', label: 'Guru', ikon: Users, perlu: 'urus_guru' },

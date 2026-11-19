@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { Fragment, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { Konteks } from '../lib/indeks'
 import type { Sekolah, SeksyenBuku } from '../lib/types'
 import { binaCarta, type BidangEksport, type JKEksport } from '../lib/eksport'
@@ -7,7 +7,7 @@ import { senaraiGuruBuku, type KumpulanGuruBuku } from '../lib/buku'
 
 const X: CSSProperties = { printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' }
 /** Satu halaman A4 (skrin: nisbah A4; cetak: tinggi tetap & pecah halaman) */
-const HALAMAN = 'relative overflow-hidden w-full aspect-[210/297] print:aspect-auto print:h-[270mm] print:break-after-page bg-white'
+const HALAMAN = 'relative overflow-hidden w-full aspect-[210/297] bg-white'
 
 export interface BahagianBuku { huruf: string; tajuk: string; warna: string; item: { kod: string; teks: string }[] }
 
@@ -24,36 +24,234 @@ export function binaBahagian(seksyen: SeksyenBuku[], data: BidangEksport[], p: P
   return out
 }
 
-/** Buku Pengurusan penuh — pratonton skrin & susun atur cetak/PDF. */
+// ───────────────────────── Susun atur halaman A4 bernombor ─────────────────────────
+const LEBAR = 794, TINGGI = 1123, PX = 64, PT = 64, PB = 76
+const ISI_H = TINGGI - PT - PB
+const LEBAR_ISI = LEBAR - PX * 2
+
+/** Bilangan item yang muat pada halaman pemisah ikut gaya; selebihnya ke halaman sambungan. */
+export const KAPASITI_PEMISAH: Record<RekaBuku['pemisah'], number> = { jalur: 26, geometri: 30, penuh: 20, minimal: 34 }
+const KAPASITI_SAMBUNGAN = 56
+
+interface Blok { key: string; el: ReactNode; kod?: string; ulang?: string }
+
+/** Pecahkan teks seksyen kepada perenggan (setiap satu blok boleh berpindah ke halaman seterusnya). */
+function perenggan(isi: string, w: string): ReactNode[] {
+  return isi.split(/\n\s*\n/).map((para, i) => {
+    const baris = para.split('\n').filter((b) => b.trim())
+    if (!baris.length) return null
+    if (baris.every((b) => /^\s*[-•]\s+/.test(b)))
+      return <ul key={i} className="space-y-1">{baris.map((b, j) => <li key={j} className="flex gap-2"><span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: hex(w), ...X }} /><span>{b.replace(/^\s*[-•]\s+/, '')}</span></li>)}</ul>
+    const [awal, ...lain] = baris
+    const subtajuk = awal.length <= 60 && awal === awal.toUpperCase() && /[A-Z]/.test(awal)
+    return <div key={i} className="text-justify">{subtajuk && <div className="font-bold text-[12px] tracking-wide mb-0.5" style={{ color: hex(w) }}>{awal}</div>}<p className="whitespace-pre-wrap">{(subtajuk ? lain : baris).join('\n')}</p></div>
+  }).filter(Boolean) as ReactNode[]
+}
+
+function binaBlokA(b: BahagianBuku, seksyen: SeksyenBuku[], carta: ReturnType<typeof binaCarta>, guru: KumpulanGuruBuku[], p: Palet, telefon: boolean): Blok[] {
+  const out: Blok[] = []
+  seksyen.forEach((x, i) => {
+    const kod = b.item[i].kod
+    const tajuk = <><TajukSub kod={kod} tajuk={x.tajuk} w={b.warna} /><div className="h-0.5 mb-3" style={{ background: `linear-gradient(90deg, ${hex(b.warna)}, transparent)`, ...X }} /></>
+    const ps = x.isi ? perenggan(x.isi, b.warna) : []
+    if (x.imej && x.isi && x.isi.length < 1400) {
+      out.push({ key: `s${x.id}`, kod, el: <>{tajuk}<div className="grid grid-cols-[1fr_190px] gap-6 items-start"><div className="space-y-2.5">{ps}</div><img src={x.imej} alt="" className="w-full rounded-xl shadow-md" /></div></> })
+      return
+    }
+    if (!ps.length) out.push({ key: `s${x.id}`, kod, el: tajuk })
+    ps.forEach((el, j) => out.push({ key: `s${x.id}-${j}`, kod: j === 0 ? kod : undefined, el: j === 0 ? <>{tajuk}{el}</> : el }))
+    if (x.imej) out.push({ key: `s${x.id}-img`, kod: ps.length ? undefined : kod, el: <img src={x.imej} alt="" className="mx-auto max-w-full max-h-[900px] rounded-xl border border-slate-200" /> })
+    out[out.length - 1] = { ...out[out.length - 1], el: <div className="pb-6">{out[out.length - 1].el}</div> }
+  })
+  out.push({ key: 'carta', kod: b.item[seksyen.length].kod, el: <Carta carta={carta} p={p} kod={b.item[seksyen.length].kod} w={b.warna} /> })
+  const kodGuru = b.item[seksyen.length + 1]?.kod
+  if (kodGuru) {
+    let n = 0
+    const lajur = <colgroup><col style={{ width: 30 }} /><col /><col style={{ width: 48 }} /><col style={{ width: 130 }} /><col style={{ width: 150 }} />{telefon && <col style={{ width: 92 }} />}</colgroup>
+    out.push({ key: 'g-tajuk', kod: kodGuru, el: <TajukSub kod={kodGuru} tajuk="Senarai Guru & Staf" w={b.warna} /> })
+    guru.forEach((kg, gi) => {
+      const kepala = `g-kepala-${gi}`
+      out.push({ key: kepala, el: (
+        <div className="mt-3">
+          <div className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: hex(p.utama) }}>{kg.tajuk} <span className="text-slate-400">({kg.baris.length})</span></div>
+          <table className="w-full table-fixed border-collapse text-[10px]">{lajur}<thead><tr className="text-white" style={{ background: hex(b.warna), ...X }}>
+            <th className="px-1.5 py-1 text-left">Bil</th><th className="px-1.5 py-1 text-left">Nama</th><th className="px-1.5 py-1 text-left">Gred</th>
+            <th className="px-1.5 py-1 text-left">Jawatan</th><th className="px-1.5 py-1 text-left">Opsyen / Subjek</th>{telefon && <th className="px-1.5 py-1 text-left">No. Tel</th>}
+          </tr></thead></table>
+        </div>) })
+      kg.baris.forEach((g, ri) => { n++; out.push({ key: `g-${gi}-${ri}`, ulang: kepala, el: (
+        <table className="w-full table-fixed border-collapse text-[10px]">{lajur}<tbody><tr className={`border-b border-slate-100 ${n % 2 ? 'bg-slate-50' : ''}`} style={X}>
+          <td className="px-1.5 py-[3px] text-slate-500 align-top">{n}</td><td className="px-1.5 py-[3px] font-semibold align-top">{g.nama}</td><td className="px-1.5 py-[3px] align-top">{g.gred}</td>
+          <td className="px-1.5 py-[3px] align-top">{g.jawatan}</td><td className="px-1.5 py-[3px] text-slate-600 align-top">{g.opsyen}</td>{telefon && <td className="px-1.5 py-[3px] font-mono align-top">{g.telefon}</td>}
+        </tr></tbody></table>) }) })
+    })
+  }
+  return out
+}
+
+/** Agih blok ke halaman ikut tinggi diukur. Blok "ulang" mengulang kepala jadual pada halaman baharu. */
+function agihHalaman(blok: Blok[], tinggi: Record<string, number>): Blok[][] {
+  const kepala = new Map(blok.map((b) => [b.key, b]))
+  const out: Blok[][] = [[]]
+  let h = 0
+  for (const b of blok) {
+    const t = tinggi[b.key] ?? 80
+    if (h + t > ISI_H && out[out.length - 1].length) {
+      out.push([]); h = 0
+      const k = b.ulang ? kepala.get(b.ulang) : null
+      if (k) { out[out.length - 1].push({ ...k, key: `${k.key}#${out.length}`, kod: undefined }); h += tinggi[k.key] ?? 60 }
+    }
+    out[out.length - 1].push(b); h += t
+  }
+  return out
+}
+
+/** Ukur tinggi setiap blok dalam bekas tersembunyi (lebar sama dengan ruang isi halaman). */
+function useTinggi(blok: Blok[]) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [tinggi, setTinggi] = useState<Record<string, number>>({})
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ukur = () => {
+      const t: Record<string, number> = {}
+      el.querySelectorAll<HTMLElement>('[data-blok]').forEach((n) => { t[n.dataset.blok!] = Math.ceil(n.getBoundingClientRect().height) })
+      setTinggi((lama) => (JSON.stringify(lama) === JSON.stringify(t) ? lama : t))
+    }
+    ukur()
+    const ro = new ResizeObserver(ukur)
+    el.querySelectorAll('[data-blok]').forEach((n) => ro.observe(n))
+    return () => ro.disconnect()
+  }, [blok])
+  const ukuran = (
+    <div ref={ref} aria-hidden className="no-print" style={{ position: 'absolute', left: -20000, top: 0, width: LEBAR_ISI, visibility: 'hidden' }}>
+      {blok.map((b) => <div key={b.key} data-blok={b.key} className="flow-root">{b.el}</div>)}
+    </div>
+  )
+  return { tinggi, ukuran }
+}
+
+function HalamanIsi({ s, b, ms, children }: { s: Sekolah; b: BahagianBuku; ms: number; children: ReactNode }) {
+  return (
+    <section className="relative overflow-hidden bg-white shadow-card print:shadow-none break-after-page" style={{ width: LEBAR, height: TINGGI }}>
+      <div className="absolute inset-x-0 top-0 flex items-center gap-3" style={{ padding: `26px ${PX}px 0` }}>
+        <span className="rounded-md px-1.5 py-0.5 text-[9px] font-black text-white" style={{ background: hex(b.warna), ...X }}>{b.huruf}</span>
+        <span className="text-[9px] font-bold tracking-[0.25em] uppercase" style={{ color: hex(b.warna) }}>{b.tajuk}</span>
+        <span className="flex-1 h-px" style={{ background: hex(b.warna), opacity: 0.35 }} />
+      </div>
+      <div className="absolute" style={{ left: PX, right: PX, top: PT, height: ISI_H }}>{children}</div>
+      <Kaki s={s} w={b.warna} ms={ms} />
+    </section>
+  )
+}
+
+/** Buku Pengurusan penuh — halaman A4 bernombor (skrin & cetak/PDF). */
 export function BukuPratonton({ k, data, reka }: { k: Konteks; data: BidangEksport[]; reka: RekaBuku }) {
   const s = k.data.sekolah
   const p = paletIkut(reka.palet)
-  const seksyen = [...k.data.buku].sort((a, b) => a.susunan - b.susunan)
+  const seksyen = useMemo(() => [...k.data.buku].sort((a, b) => a.susunan - b.susunan), [k])
   const denganSenarai = reka.senaraiGuru !== false
-  const bhg = binaBahagian(seksyen, data, p, denganSenarai)
-  const carta = binaCarta(k, data)
-  const guru = denganSenarai ? senaraiGuruBuku(k.data) : []
+  const telefon = reka.telefon !== false
+  const bhg = useMemo(() => binaBahagian(seksyen, data, p, denganSenarai), [seksyen, data, p, denganSenarai])
+  const blokBhg = useMemo(() => {
+    const carta = binaCarta(k, data)
+    const guru = denganSenarai ? senaraiGuruBuku(k.data) : []
+    return bhg.map((b, bi) => bi === 0
+      ? binaBlokA(b, seksyen, carta, guru, p, telefon)
+      : (data[bi - 1]?.jk ?? []).map((j, ji): Blok => ({ key: `${b.huruf}-${j.no}`, kod: b.item[ji].kod, el: <IsiJK j={j} kod={b.item[ji].kod} w={b.warna} gaya={reka.isi} p={p} /> })))
+  }, [k, data, bhg, seksyen, p, denganSenarai, telefon, reka.isi])
+  const semuaBlok = useMemo(() => blokBhg.flat(), [blokBhg])
+  const { tinggi, ukuran } = useTinggi(semuaBlok)
+
+  // ── Isi kandungan: 2 lajur, tinggi baris tetap → bilangan halaman boleh dikira dahulu
+  const TJ = 34, TI = 19, TAJUK_TOC = 120
+  const entri = bhg.flatMap((b) => [{ jenis: 'b' as const, b, kod: b.huruf }, ...b.item.map((x) => ({ jenis: 'i' as const, b, kod: x.kod, teks: x.teks }))])
+  type E = (typeof entri)[number]
+  const tocHalaman: E[][][] = []
+  {
+    let hal: E[][] = [[], []], lj = 0, h = 0, had = ISI_H - TAJUK_TOC
+    for (const e of entri) {
+      const t = e.jenis === 'b' ? TJ : TI
+      if (h + t > had) { if (lj === 0) { lj = 1 } else { tocHalaman.push(hal); hal = [[], []]; lj = 0; had = ISI_H }; h = 0 }
+      hal[lj].push(e); h += t
+    }
+    tocHalaman.push(hal)
+  }
+
+  // ── Nombor muka surat: kulit tidak bernombor; isi kandungan = ms 1
+  let ms = 1
+  const msToc = tocHalaman.map(() => ms++)
+  const susun = bhg.map((b, bi) => {
+    const cap = KAPASITI_PEMISAH[reka.pemisah]
+    const sambungan: BahagianBuku['item'][] = []
+    for (let i = cap; i < b.item.length; i += KAPASITI_SAMBUNGAN) sambungan.push(b.item.slice(i, i + KAPASITI_SAMBUNGAN))
+    const msPemisah = ms++
+    const msSambungan = sambungan.map(() => ms++)
+    const halaman = agihHalaman(blokBhg[bi], tinggi).map((blok) => ({ blok, ms: ms++ }))
+    return { b, bi, sambungan, msPemisah, msSambungan, halaman }
+  })
+  const msItem: Record<string, number> = {}
+  susun.forEach((x) => { msItem[x.b.huruf] = x.msPemisah; x.halaman.forEach((h) => h.blok.forEach((bl) => { if (bl.kod && !msItem[bl.kod]) msItem[bl.kod] = h.ms })) })
+
   return (
-    <div className="space-y-8 print:space-y-0 text-[12.5px] leading-relaxed text-slate-800 font-[Arial,sans-serif]" style={X}>
-      <Kulit s={s} p={p} reka={reka} bhg={bhg} />
-      <IsiKandungan p={p} bhg={bhg} />
-      {bhg.map((b, bi) => {
-        const bidang = data[bi - 1]
-        return (
-          <div key={b.huruf} className="space-y-8 print:space-y-0">
-            <Pemisah s={s} p={p} gaya={reka.pemisah} b={b} no={bi + 1} />
-            <div className="halaman-isi bg-white p-10 print:p-0 print:break-after-page">
-              {bi === 0 ? <>
-                {seksyen.map((x, i) => <Seksyen key={x.id} x={x} kod={b.item[i].kod} w={b.warna} />)}
-                <Carta carta={carta} p={p} kod={b.item[seksyen.length].kod} w={b.warna} />
-                {denganSenarai && <SenaraiGuru kump={guru} kod={b.item[seksyen.length + 1].kod} w={b.warna} p={p} telefon={reka.telefon !== false} />}
-              </> : bidang?.jk.map((j, ji) => <IsiJK key={j.no} j={j} kod={b.item[ji].kod} w={b.warna} gaya={reka.isi} p={p} />)}
+    <div className="relative text-[12.5px] leading-relaxed text-slate-800 font-[Arial,sans-serif]" style={X}>
+      <style>{`@media print { @page { size: A4; margin: 0 } main { padding: 0 !important; max-width: none !important } .break-after-page { break-after: page } }`}</style>
+      {ukuran}
+      <div className="flex flex-col items-center gap-6 print:block print:gap-0 overflow-x-auto">
+        <div style={{ width: LEBAR }} className="break-after-page"><Kulit s={s} p={p} reka={reka} bhg={bhg} /></div>
+        {tocHalaman.map((hal, i) => (
+          <section key={`toc${i}`} className="relative overflow-hidden bg-white shadow-card print:shadow-none break-after-page" style={{ width: LEBAR, height: TINGGI }}>
+            <div className="absolute" style={{ left: PX, right: PX, top: PT, height: ISI_H }}>
+              {i === 0 && <div style={{ height: TAJUK_TOC }}>
+                <div className="text-[9px] font-bold tracking-[0.35em]" style={{ color: hex(p.aksen) }}>KANDUNGAN</div>
+                <div className="text-4xl font-black" style={{ color: hex(p.utama) }}>Isi Kandungan</div>
+                <div className="mt-3 h-1.5 w-20 rounded-full" style={{ background: hex(p.aksen), ...X }} />
+              </div>}
+              <div className="grid grid-cols-2 gap-x-8">
+                {hal.map((lajur, li) => (
+                  <div key={li}>{lajur.map((e) => e.jenis === 'b' ? (
+                    <div key={e.kod} className="flex items-center gap-2" style={{ height: TJ }}>
+                      <span className="h-6 w-6 rounded-lg text-white text-[11px] font-black flex items-center justify-center shrink-0" style={{ background: hex(e.b.warna), ...X }}>{e.b.huruf}</span>
+                      <span className="flex-1 truncate text-[11.5px] font-extrabold uppercase" style={{ color: hex(e.b.warna) }}>{e.b.tajuk}</span>
+                      <span className="text-[11px] font-black" style={{ color: hex(e.b.warna) }}>{msItem[e.kod] ?? ''}</span>
+                    </div>
+                  ) : (
+                    <div key={e.kod} className="flex items-baseline gap-1.5 text-[10.5px]" style={{ height: TI }}>
+                      <b className="w-7 shrink-0" style={{ color: hex(e.b.warna) }}>{e.kod}</b>
+                      <span className="truncate text-slate-700">{e.teks}</span>
+                      <span className="flex-1 border-b border-dotted border-slate-300 min-w-3" />
+                      <span className="font-semibold text-slate-600">{msItem[e.kod] ?? ''}</span>
+                    </div>
+                  ))}</div>
+                ))}
+              </div>
             </div>
-          </div>
-        )
-      })}
-      <KulitBelakang s={s} p={p} reka={reka} bhg={bhg} />
+            <Kaki s={s} w={p.aksen} ms={msToc[i]} />
+          </section>
+        ))}
+        {susun.map(({ b, bi, sambungan, msPemisah, msSambungan, halaman }) => (
+          <Fragment key={b.huruf}>
+            <div style={{ width: LEBAR }} className="break-after-page shadow-card print:shadow-none"><Pemisah s={s} p={p} gaya={reka.pemisah} b={b} no={bi + 1} ms={msItem} halaman={msPemisah} /></div>
+            {sambungan.map((item, i) => <PemisahSambungan key={i} s={s} b={b} item={item} ms={msItem} halaman={msSambungan[i]} />)}
+            {halaman.map((h) => <HalamanIsi key={h.ms} s={s} b={b} ms={h.ms}>{h.blok.map((bl) => <div key={bl.key} className="flow-root">{bl.el}</div>)}</HalamanIsi>)}
+          </Fragment>
+        ))}
+        <div style={{ width: LEBAR }} className="shadow-card print:shadow-none"><KulitBelakang s={s} p={p} reka={reka} bhg={bhg} /></div>
+      </div>
     </div>
+  )
+}
+
+function PemisahSambungan({ s, b, item, ms, halaman }: { s: Sekolah; b: BahagianBuku; item: BahagianBuku['item']; ms: Record<string, number>; halaman: number }) {
+  return (
+    <section className="relative overflow-hidden bg-white shadow-card print:shadow-none break-after-page" style={{ width: LEBAR, height: TINGGI }}>
+      <div className="flex items-center gap-4 px-16 py-8 text-white" style={{ background: hex(b.warna), ...X }}>
+        <span className="text-5xl font-black">{b.huruf}</span>
+        <div><div className="text-[9px] font-bold tracking-[0.35em] opacity-80">BAHAGIAN {b.huruf} · SAMBUNGAN</div><div className="text-xl font-black uppercase">{b.tajuk}</div></div>
+      </div>
+      <div className="px-16 pt-8"><SenaraiItem b={b} item={item} lajur={2} ms={ms} /></div>
+      <Kaki s={s} w={b.warna} ms={halaman} />
+    </section>
   )
 }
 
@@ -68,10 +266,12 @@ function Logo({ s, saiz, bulat = true, kelas = '' }: { s: Sekolah; saiz: number;
 }
 const namaPendek = (s: Sekolah) => s.nama.replace(/^SEKOLAH KEBANGSAAN\s+/i, 'SK ').replace(/^SEKOLAH MENENGAH KEBANGSAAN\s+/i, 'SMK ')
 const alamat = (s: Sekolah) => [s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ')
-function Kaki({ s, w, gelap = false }: { s: Sekolah; w: string; gelap?: boolean }) {
+function Kaki({ s, w, gelap = false, ms }: { s: Sekolah; w: string; gelap?: boolean; ms?: number }) {
   return (
-    <div className={`absolute bottom-0 inset-x-0 flex items-center justify-between px-10 py-4 text-[9px] font-bold tracking-[0.25em] uppercase ${gelap ? 'text-white/60' : 'text-slate-400'}`}>
-      <span>{namaPendek(s)}</span><span className="h-1 w-10 rounded-full" style={{ background: hex(w), ...X }} /><span>Buku Pengurusan {s.tahun_semasa}</span>
+    <div className={`absolute bottom-0 inset-x-0 flex items-center justify-between px-16 py-6 text-[9px] font-bold tracking-[0.25em] uppercase ${gelap ? 'text-white/70' : 'text-slate-400'}`}>
+      <span className="w-1/3">{namaPendek(s)}</span>
+      {ms ? <span className="h-7 min-w-7 px-2 rounded-full flex items-center justify-center text-[11px] tracking-normal text-white" style={{ background: hex(w), ...X }}>{ms}</span> : <span className="h-1 w-10 rounded-full" style={{ background: hex(w), ...X }} />}
+      <span className="w-1/3 text-right">Buku Pengurusan {s.tahun_semasa}</span>
     </div>
   )
 }
@@ -162,46 +362,24 @@ export function Kulit({ s, p, reka, bhg }: { s: Sekolah; p: Palet; reka: RekaBuk
 }
 
 // ───────────────────────── Isi kandungan ─────────────────────────
-function IsiKandungan({ p, bhg }: { p: Palet; bhg: BahagianBuku[] }) {
-  return (
-    <section className="bg-white p-12 print:p-0 print:break-after-page">
-      <div className="text-[9px] font-bold tracking-[0.35em]" style={{ color: hex(p.aksen) }}>KANDUNGAN</div>
-      <div className="text-4xl font-black" style={{ color: hex(p.utama) }}>Isi Kandungan</div>
-      <div className="mt-3 h-1.5 w-20 rounded-full" style={{ background: hex(p.aksen), ...X }} />
-      <div className="mt-8 space-y-6">
-        {bhg.map((b) => (
-          <div key={b.huruf} className="break-inside-avoid">
-            <div className="flex items-center gap-3">
-              <span className="h-9 w-9 rounded-xl text-white font-black flex items-center justify-center" style={{ background: hex(b.warna), ...X }}>{b.huruf}</span>
-              <span className="text-base font-extrabold uppercase" style={{ color: hex(b.warna) }}>{b.tajuk}</span>
-            </div>
-            <div className="mt-2 ml-12 grid grid-cols-2 gap-x-8 gap-y-0.5 text-[11px] text-slate-600">
-              {b.item.map((x) => <div key={x.kod} className="flex gap-2 border-b border-dotted border-slate-200 py-0.5"><b className="w-7 shrink-0" style={{ color: hex(b.warna) }}>{x.kod}</b><span className="truncate">{x.teks}</span></div>)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 // ───────────────────────── Pemisah bahagian ─────────────────────────
-function SenaraiItem({ b, lajur, had, putih = false }: { b: BahagianBuku; lajur: 1 | 2; had: number; putih?: boolean }) {
-  const papar = b.item.slice(0, had), lebih = b.item.length - papar.length
+function SenaraiItem({ b, item, lajur, putih = false, ms }: { b: BahagianBuku; item: BahagianBuku['item']; lajur: 1 | 2; putih?: boolean; ms?: Record<string, number> }) {
   return (
-    <div className={lajur === 2 ? 'grid grid-cols-2 gap-2' : 'space-y-1.5'}>
-      {papar.map((x) => (
-        <div key={x.kod} className={`flex items-center gap-2.5 ${lajur === 2 ? 'rounded-lg border-l-4 px-2.5 py-1.5' : 'border-b py-1'} ${putih ? 'bg-white/90' : lajur === 2 ? 'bg-slate-50' : 'border-slate-100'}`} style={lajur === 2 ? { borderColor: hex(b.warna), ...X } : undefined}>
+    <div className={lajur === 2 ? 'grid grid-cols-2 gap-1.5' : 'space-y-1'}>
+      {item.map((x) => (
+        <div key={x.kod} className={`flex items-center gap-2 ${lajur === 2 ? 'rounded-lg border-l-4 px-2 py-1' : 'border-b py-1'} ${putih ? 'bg-white/90' : lajur === 2 ? 'bg-slate-50' : 'border-slate-100'}`} style={lajur === 2 ? { borderColor: hex(b.warna), ...X } : undefined}>
           <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-black text-white" style={{ background: hex(b.warna), ...X }}>{x.kod}</span>
-          <span className="text-[10px] font-semibold text-slate-700 leading-tight">{x.teks}</span>
+          <span className="flex-1 text-[9.5px] font-semibold text-slate-700 leading-tight">{x.teks}</span>
+          {ms?.[x.kod] && <span className="shrink-0 text-[9px] font-bold text-slate-400">{ms[x.kod]}</span>}
         </div>
       ))}
-      {lebih > 0 && <div className="text-[10px] font-semibold text-slate-400 px-1">+ {lebih} lagi</div>}
     </div>
   )
 }
-export function Pemisah({ s, p, gaya, b, no }: { s: Sekolah; p: Palet; gaya: RekaBuku['pemisah']; b: BahagianBuku; no: number }) {
+export function Pemisah({ s, p, gaya, b, no, ms, halaman }: { s: Sekolah; p: Palet; gaya: RekaBuku['pemisah']; b: BahagianBuku; no: number; ms?: Record<string, number>; halaman?: number }) {
   const w = hex(b.warna)
+  const item = b.item.slice(0, KAPASITI_PEMISAH[gaya])
+  const lagi = b.item.length - item.length
   if (gaya === 'geometri') return (
     <section className={HALAMAN}>
       <div className="absolute inset-x-0 top-0 h-[42%] overflow-hidden" style={{ background: w, ...X }}>
@@ -216,8 +394,8 @@ export function Pemisah({ s, p, gaya, b, no }: { s: Sekolah; p: Palet; gaya: Rek
         </div>
       </div>
       <div className="absolute right-10 top-[37%]"><Logo s={s} saiz={64} bulat={false} /></div>
-      <div className="absolute inset-x-10 top-[48%]"><SenaraiItem b={b} lajur={2} had={26} /></div>
-      <Kaki s={s} w={b.warna} />
+      <div className="absolute inset-x-10 top-[48%]"><SenaraiItem b={b} item={item} lajur={2} ms={ms} />{lagi > 0 && <div className="mt-2 text-[10px] font-semibold text-slate-400">Bersambung di halaman sebelah ({lagi} lagi) →</div>}</div>
+      <Kaki s={s} w={b.warna} ms={halaman} />
     </section>
   )
   if (gaya === 'penuh') return (
@@ -228,8 +406,8 @@ export function Pemisah({ s, p, gaya, b, no }: { s: Sekolah; p: Palet; gaya: Rek
         <div className="mt-2 text-5xl font-black uppercase leading-[1.05]">{b.tajuk}</div>
         <div className="mt-5 h-1.5 w-20 rounded-full bg-white/80" />
       </div>
-      <div className="absolute inset-x-12 bottom-16 rounded-2xl bg-white/95 p-5 shadow-xl"><SenaraiItem b={b} lajur={2} had={22} /></div>
-      <Kaki s={s} w={p.kedua} gelap />
+      <div className="absolute inset-x-12 bottom-16 rounded-2xl bg-white/95 p-5 shadow-xl"><SenaraiItem b={b} item={item} lajur={2} ms={ms} />{lagi > 0 && <div className="mt-2 text-[10px] font-semibold text-slate-400">Bersambung di halaman sebelah ({lagi} lagi) →</div>}</div>
+      <Kaki s={s} w={p.kedua} gelap ms={halaman} />
     </section>
   )
   if (gaya === 'minimal') return (
@@ -239,9 +417,9 @@ export function Pemisah({ s, p, gaya, b, no }: { s: Sekolah; p: Palet; gaya: Rek
         <div className="text-xs font-bold tracking-[0.4em] mt-2" style={{ color: w }}>BAHAGIAN {b.huruf}</div>
         <div className="mt-1 text-4xl font-black uppercase" style={{ color: hex(p.utama) }}>{b.tajuk}</div>
         <div className="mt-4 h-1.5 w-16 rounded-full" style={{ background: w, ...X }} />
-        <div className="mt-8"><SenaraiItem b={b} lajur={2} had={24} /></div>
+        <div className="mt-8"><SenaraiItem b={b} item={item} lajur={2} ms={ms} />{lagi > 0 && <div className="mt-2 text-[10px] font-semibold text-slate-400">Bersambung di halaman sebelah ({lagi} lagi) →</div>}</div>
       </div>
-      <Kaki s={s} w={b.warna} />
+      <Kaki s={s} w={b.warna} ms={halaman} />
     </section>
   )
   // jalur (lalai)
@@ -257,9 +435,9 @@ export function Pemisah({ s, p, gaya, b, no }: { s: Sekolah; p: Palet; gaya: Rek
         <div className="text-[9px] font-bold tracking-[0.35em]" style={{ color: w }}>BAHAGIAN {b.huruf}</div>
         <div className="mt-1 text-3xl font-black uppercase leading-tight" style={{ color: hex(p.utama) }}>{b.tajuk}</div>
         <div className="mt-3 flex gap-1"><span className="h-1.5 w-10 rounded-full" style={{ background: w, ...X }} /><span className="h-1.5 w-4 rounded-full" style={{ background: hex(p.kedua), ...X }} /></div>
-        <div className="mt-8"><SenaraiItem b={b} lajur={1} had={22} /></div>
+        <div className="mt-8"><SenaraiItem b={b} item={item} lajur={1} ms={ms} />{lagi > 0 && <div className="mt-2 text-[10px] font-semibold text-slate-400">Bersambung di halaman sebelah ({lagi} lagi) →</div>}</div>
       </div>
-      <Kaki s={s} w={b.warna} />
+      <Kaki s={s} w={b.warna} ms={halaman} />
     </section>
   )
 }
@@ -272,20 +450,6 @@ function TajukSub({ kod, tajuk, w, kanan }: { kod: string; tajuk: string; w: str
       <h3 className="text-[15px] font-extrabold uppercase tracking-wide flex-1" style={{ color: hex(w) }}>{tajuk}</h3>
       {kanan}
     </div>
-  )
-}
-function Seksyen({ x, kod, w }: { x: SeksyenBuku; kod: string; w: string }) {
-  return (
-    <section className="mb-10 break-inside-avoid-page">
-      <TajukSub kod={kod} tajuk={x.tajuk} w={w} />
-      <div className="h-0.5 mb-3" style={{ background: `linear-gradient(90deg, ${hex(w)}, transparent)`, ...X }} />
-      {x.imej && x.isi ? (
-        <div className="grid grid-cols-[1fr_190px] gap-6 items-start"><TeksSeksyen isi={x.isi} w={w} /><img src={x.imej} alt="" className="w-full rounded-xl shadow-md" /></div>
-      ) : <>
-        {x.isi && <TeksSeksyen isi={x.isi} w={w} />}
-        {x.imej && <img src={x.imej} alt="" className="mt-2 mx-auto max-w-full max-h-[820px] rounded-xl border border-slate-200" />}
-      </>}
-    </section>
   )
 }
 function Carta({ carta, p, kod, w }: { carta: ReturnType<typeof binaCarta>; p: Palet; kod: string; w: string }) {
@@ -308,30 +472,6 @@ function Carta({ carta, p, kod, w }: { carta: ReturnType<typeof binaCarta>; p: P
           </div>
         ))}
       </div>
-    </section>
-  )
-}
-function SenaraiGuru({ kump, kod, w, p, telefon }: { kump: KumpulanGuruBuku[]; kod: string; w: string; p: Palet; telefon: boolean }) {
-  let n = 0
-  return (
-    <section className="mb-6 print:break-before-page">
-      <TajukSub kod={kod} tajuk="Senarai Guru & Staf" w={w} />
-      {kump.map((k) => (
-        <div key={k.tajuk} className="mt-4">
-          <div className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: hex(p.utama) }}>{k.tajuk} <span className="text-slate-400">({k.baris.length})</span></div>
-          <table className="w-full border-collapse text-[10.5px]">
-            <thead><tr className="text-white" style={{ background: hex(w), ...X }}>
-              <th className="px-2 py-1 text-left w-8">Bil</th><th className="px-2 py-1 text-left">Nama</th><th className="px-2 py-1 text-left w-14">Gred</th>
-              <th className="px-2 py-1 text-left">Jawatan</th><th className="px-2 py-1 text-left">Opsyen / Subjek</th>{telefon && <th className="px-2 py-1 text-left w-24">No. Tel</th>}
-            </tr></thead>
-            <tbody>{k.baris.map((g) => { n++; return (
-              <tr key={g.nama + n} className="border-b border-slate-100 break-inside-avoid odd:bg-slate-50" style={X}>
-                <td className="px-2 py-1 text-slate-500">{n}</td><td className="px-2 py-1 font-semibold">{g.nama}</td><td className="px-2 py-1">{g.gred}</td>
-                <td className="px-2 py-1">{g.jawatan}</td><td className="px-2 py-1 text-slate-600">{g.opsyen}</td>{telefon && <td className="px-2 py-1 font-mono">{g.telefon}</td>}
-              </tr>) })}</tbody>
-          </table>
-        </div>
-      ))}
     </section>
   )
 }
@@ -380,23 +520,6 @@ function IsiJK({ j, kod, w, gaya, p }: { j: JKEksport; kod: string; w: string; g
       </tbody></table>
       {tugas && <div className="px-4 pb-3">{tugas}</div>}
     </section>
-  )
-}
-
-/** Baris kosong = perenggan; baris "- " = senarai; baris HURUF BESAR pendek = subtajuk. */
-function TeksSeksyen({ isi, w }: { isi: string; w: string }) {
-  return (
-    <div className="space-y-2.5 text-justify">
-      {isi.split(/\n\s*\n/).map((para, i) => {
-        const baris = para.split('\n').filter((b) => b.trim())
-        if (!baris.length) return null
-        if (baris.every((b) => /^\s*[-•]\s+/.test(b)))
-          return <ul key={i} className="space-y-1">{baris.map((b, j) => <li key={j} className="flex gap-2"><span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: hex(w), ...X }} /><span>{b.replace(/^\s*[-•]\s+/, '')}</span></li>)}</ul>
-        const [awal, ...lain] = baris
-        const subtajuk = awal.length <= 60 && awal === awal.toUpperCase() && /[A-Z]/.test(awal)
-        return <div key={i}>{subtajuk && <div className="font-bold text-[12px] tracking-wide mb-0.5" style={{ color: hex(w) }}>{awal}</div>}<p className="whitespace-pre-wrap">{(subtajuk ? lain : baris).join('\n')}</p></div>
-      })}
-    </div>
   )
 }
 
