@@ -1,7 +1,8 @@
 import type { DataSekolah, StatusAgihan } from './types'
+import type { RekaBuku } from './tema'
 
 export type Baris = { id?: string; [k: string]: unknown }
-export type NamaJadual = 'guru' | 'jawatankuasa' | 'slot' | 'tahap' | 'peranan_jk' | 'tempoh' | 'gred' | 'bidang' | 'tugas_luar' | 'maklum_balas'
+export type NamaJadual = 'guru' | 'jawatankuasa' | 'slot' | 'tahap' | 'peranan_jk' | 'tempoh' | 'gred' | 'bidang' | 'tugas_luar' | 'maklum_balas' | 'buku_seksyen'
 
 /** Antara muka data — dilaksanakan oleh StorDemo (dalam memori / simulasi) dan StorSupabase. */
 export interface Stor {
@@ -21,6 +22,8 @@ export interface Stor {
   arkib(jadual: 'jawatankuasa' | 'slot', id: string): Promise<void>
   simpanTetapan(t: Partial<DataSekolah['tetapan']>): Promise<void>
   simpanSekolah(s: Partial<DataSekolah['sekolah']>): Promise<void>
+  /** Reka bentuk Buku Pengurusan (admin/GB/PK/Setiausaha) */
+  simpanRekaBuku(r: RekaBuku): Promise<void>
   salinTahunLepas(): Promise<number>
   tukarStatus(status: StatusAgihan, catatan?: string): Promise<void>
 }

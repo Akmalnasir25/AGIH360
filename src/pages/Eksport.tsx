@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BookOpen, FileSpreadsheet, FileText, List, Loader2, Printer, Search } from 'lucide-react'
 import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
 import { WARNA_BIDANG } from '../components/ui'
-import { binaCarta, keExcel, keWord, keWordBuku, kumpul, tajukDokumen, type Pilihan } from '../lib/eksport'
+import { keExcel, keWord, kumpul, tajukDokumen, type Pilihan } from '../lib/eksport'
 import { KepalaSurat, PilihKepala, useModKepala } from '../components/KepalaSurat'
 import type { Sekolah } from '../lib/types'
 
@@ -20,7 +20,8 @@ export default function Eksport() {
   const [cariJK, setCariJK] = useState('')
   const [p, setP] = useState<Pilihan>({ tunjukKosong: false, gabungPeranan: true })
   const [sibuk, setSibuk] = useState<string | null>(null)
-  const [buku, setBuku] = useState(false)
+  const nav = useNavigate()
+  const buku = false
   const [modKepala, setModKepala] = useModKepala(k?.data.sekolah ?? ({ kepala_surat: null } as Sekolah))
 
   const data = useMemo(() => {
@@ -38,7 +39,7 @@ export default function Eksport() {
   const jana = async (jenis: 'word' | 'excel') => {
     setSibuk(jenis)
     try {
-      if (jenis === 'word') await (buku ? keWordBuku(d.sekolah, data, binaCarta(k, data)) : keWord(d.sekolah, data, modKepala))
+      if (jenis === 'word') await keWord(d.sekolah, data, modKepala)
       else await keExcel(d.sekolah, data, k)
     } finally { setSibuk(null) }
   }
@@ -52,8 +53,8 @@ export default function Eksport() {
           <div className="kad p-4">
             <div className="label">Jenis dokumen</div>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setBuku(false)} className={`rounded-2xl border-2 p-3 text-left ${!buku ? 'border-brand-500 bg-brand-50' : 'border-navy-100'}`}><List size={18} className="text-brand-600" /><div className="font-bold text-sm mt-1">Senarai AJK</div><div className="text-[11px] text-navy-500">Jadual ahli setiap JK</div></button>
-              <button onClick={() => setBuku(true)} className={`rounded-2xl border-2 p-3 text-left ${buku ? 'border-brand-500 bg-brand-50' : 'border-navy-100'}`}><BookOpen size={18} className="text-brand-600" /><div className="font-bold text-sm mt-1">Buku Pengurusan</div><div className="text-[11px] text-navy-500">Kulit, isi kandungan, carta, bidang tugas</div></button>
+              <button className="rounded-2xl border-2 p-3 text-left border-brand-500 bg-brand-50"><List size={18} className="text-brand-600" /><div className="font-bold text-sm mt-1">Senarai AJK</div><div className="text-[11px] text-navy-500">Jadual ahli setiap JK</div></button>
+              <button onClick={() => nav('/app/buku?tab=pratonton')} className="rounded-2xl border-2 p-3 text-left border-navy-100 hover:border-navy-300"><BookOpen size={18} className="text-brand-600" /><div className="font-bold text-sm mt-1">Buku Pengurusan →</div><div className="text-[11px] text-navy-500">Kulit, pemisah, tema warna — di tab Buku Pengurusan</div></button>
             </div>
           </div>
           <div className="kad p-4">
@@ -109,7 +110,6 @@ export default function Eksport() {
         {/* Pratonton (juga susun atur PDF) */}
         <div className="bg-white shadow-card print:shadow-none rounded-2xl print:rounded-none p-8 sm:p-12 text-black text-[12.5px] font-sans min-h-[60vh]">
           {data.length === 0 ? <div className="text-center text-navy-400 py-20 no-print">Pilih unit atau jawatankuasa untuk dipratonton.</div> : <>
-            {buku && <PraBuku k={k} data={data} />}
             {!buku && <div className="mb-4"><KepalaSurat s={d.sekolah} mod={modKepala} /></div>}
             {!buku && <div className="text-center mb-8">
               <div className="font-bold">{tajukDokumen(d.sekolah, data)}</div>
@@ -154,53 +154,5 @@ function BtnFormat({ ikon, label, sub, warna, onClick, sibuk, mati }: { ikon: Re
     <button disabled={mati || sibuk} onClick={onClick} className={`${warna} text-white rounded-2xl py-3 flex flex-col items-center gap-1 font-bold text-sm transition hover:-translate-y-0.5 hover:shadow-pop disabled:opacity-40 disabled:translate-y-0`}>
       {sibuk ? <Loader2 className="animate-spin" /> : ikon}{label}<span className="text-[10px] font-medium opacity-80">{sub}</span>
     </button>
-  )
-}
-
-function PraBuku({ k, data }: { k: NonNullable<ReturnType<typeof useAplikasi>['k']>; data: ReturnType<typeof kumpul> }) {
-  const s = k.data.sekolah
-  const carta = binaCarta(k, data)
-  return (
-    <>
-      {/* Kulit */}
-      <div className="relative overflow-hidden rounded-xl print:rounded-none bg-[#0B1F3A] text-white [print-color-adjust:exact] h-[640px] print:h-[95vh] flex flex-col justify-between p-10 print:break-after-page">
-        <div className="absolute -right-24 top-24 h-[420px] w-[420px] rotate-12 bg-[#10B483]" />
-        <div className="absolute -right-24 top-[300px] h-24 w-[520px] -rotate-[24deg] bg-[#F9C846]" />
-        <div className="relative">
-          <div className="text-sm font-bold tracking-widest opacity-80">{s.kod}</div>
-          <div className="text-lg font-bold mt-1">{s.nama.toUpperCase()}</div>
-        </div>
-        <div className="relative">
-          <div className="text-7xl font-black text-[#F9C846] opacity-90">{s.tahun_semasa}</div>
-          <div className="text-5xl font-black leading-tight mt-2">BUKU<br />PENGURUSAN<br />SEKOLAH</div>
-        </div>
-        <div className="relative text-sm opacity-80">{[s.alamat, s.daerah, s.negeri].filter(Boolean).join(', ')}</div>
-      </div>
-      {/* Isi kandungan */}
-      <div className="mt-10 print:mt-0 print:break-after-page">
-        <div className="text-center font-bold text-base mb-4">ISI KANDUNGAN</div>
-        <div className="flex justify-between border-b border-dotted border-gray-400 py-1"><span>Carta Organisasi</span></div>
-        {data.map((b) => (
-          <div key={b.huruf} className="mt-2">
-            <div className="font-bold border-b border-dotted border-gray-400 py-1">BAHAGIAN {b.huruf}: {b.nama.toUpperCase()}</div>
-            {b.jk.map((j) => <div key={j.no} className="pl-5 border-b border-dotted border-gray-300 py-0.5">{j.no}&nbsp;&nbsp;{j.nama}</div>)}
-          </div>
-        ))}
-      </div>
-      {/* Carta organisasi */}
-      <div className="mt-10 print:mt-0 print:break-after-page">
-        <div className="bg-[#0B1F3A] text-white font-bold px-3 py-1.5 [print-color-adjust:exact]">CARTA ORGANISASI</div>
-        <div className="flex justify-center mt-6"><div className="rounded-lg bg-[#0B1F3A] text-white text-center px-6 py-3 [print-color-adjust:exact]"><div className="font-bold">{carta.ketua.jawatan.toUpperCase()}</div><div className="text-[11px]">{carta.ketua.nama}</div></div></div>
-        <div className="mx-auto h-5 w-px bg-gray-400" />
-        <div className="grid gap-2 border-t border-gray-400 pt-5" style={{ gridTemplateColumns: `repeat(${carta.cabang.length}, minmax(0,1fr))` }}>
-          {carta.cabang.map((c) => (
-            <div key={c.bidang}>
-              <div className="rounded-lg bg-[#06926B] text-white text-center px-2 py-2 [print-color-adjust:exact]"><div className="font-bold text-[11px]">{c.bidang.toUpperCase()}</div>{c.pk && <div className="text-[10px] mt-0.5">{c.pk}</div>}</div>
-              <ul className="mt-2 text-[10.5px] space-y-0.5">{c.jk.map((j) => <li key={j}>• {j}</li>)}</ul>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
   )
 }

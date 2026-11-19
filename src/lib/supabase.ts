@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { DataSekolah, StatusAgihan } from './types'
 import type { Baris, NamaJadual, Stor } from './stor'
+import type { RekaBuku } from './tema'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -32,7 +33,7 @@ export class StorSupabase implements Stor {
     const sekolah = semak(await c.from('sekolah').select('*').eq('id', id).single()) as DataSekolah['sekolah']
     const tahun = sekolah.tahun_semasa
     this.tahunCache = tahun
-    const [tetapan, tahap, peranan, tempoh, gred, bidang, guru, jawatankuasa, slot, lantikan, tugasLuar, kelulusan, log, maklumBalas] = await Promise.all([
+    const [tetapan, tahap, peranan, tempoh, gred, bidang, guru, jawatankuasa, slot, lantikan, tugasLuar, kelulusan, log, maklumBalas, buku] = await Promise.all([
       c.from('tetapan').select('*').eq('school_id', id).single(),
       c.from('tahap').select('id,nama,faktor,susunan').eq('school_id', id).order('susunan'),
       c.from('peranan_jk').select('id,nama,berat,susunan').eq('school_id', id).order('susunan'),
@@ -47,6 +48,7 @@ export class StorSupabase implements Stor {
       c.from('kelulusan').select('status,catatan,dikemaskini').eq('school_id', id).eq('tahun', tahun).maybeSingle(),
       c.from('log_audit').select('id,masa,pengguna,tindakan,butiran').eq('school_id', id).order('masa', { ascending: false }).limit(200),
       c.from('maklum_balas').select('id,guru_id,tahun,mesej,status,balasan,dicipta').eq('school_id', id).order('dicipta', { ascending: false }),
+      c.from('buku_seksyen').select('id,tajuk,isi,imej,susunan').eq('school_id', id).order('susunan'),
     ])
     const num = <T extends Record<string, unknown>>(rows: T[] | null, keys: string[]) =>
       (rows ?? []).map((r) => { const o: Record<string, unknown> = { ...r }; keys.forEach((k) => (o[k] = Number(o[k]))); return o as T })
@@ -67,6 +69,7 @@ export class StorSupabase implements Stor {
       kelulusan: semak(kelulusan) ?? { status: 'draf', catatan: null, dikemaskini: null },
       log: semak(log) ?? [],
       maklumBalas: semak(maklumBalas) ?? [],
+      buku: buku.error ? [] : (buku.data ?? []),
     } as DataSekolah
   }
 
@@ -138,6 +141,9 @@ export class StorSupabase implements Stor {
     const r = semak(await sb().from('sekolah').update(rest).eq('id', this.schoolId).select('id')) as unknown[] | null
     if (!r?.length) throw new Error('Tiada kebenaran untuk mengubah maklumat sekolah.')
     this.tahunCache = null
+  }
+  async simpanRekaBuku(r: RekaBuku) {
+    semak(await sb().rpc('tetap_reka_buku', { p_school: this.schoolId, p_reka: r }))
   }
   async salinTahunLepas() {
     const tahun = await this.tahun()

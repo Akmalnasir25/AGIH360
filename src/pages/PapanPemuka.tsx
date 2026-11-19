@@ -55,7 +55,7 @@ export default function PapanPemuka() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <KadStat warna="brand" ikon={<Scale size={16} />} label="Seimbang" nilai={s.kira('seimbang')} sub={`${seimbangPc}% daripada guru`} onClick={() => pergi('seimbang')} />
         <KadStat warna="rose" ikon={<AlertOctagon size={16} />} label="Terbeban" nilai={s.kira('terbeban')} sub={`Indeks > ${t.ambang_tinggi}`} onClick={() => pergi('terbeban')} />
-        <KadStat warna="sky" ikon={<Feather size={16} />} label="Ada ruang" nilai={s.kira('kurang')} sub={`Indeks < ${t.ambang_rendah}`} onClick={() => pergi('kurang')} />
+        <KadStat warna="sky" ikon={<Feather size={16} />} label="Beban ringan" nilai={s.kira('kurang')} sub={`Indeks < ${t.ambang_rendah}`} onClick={() => pergi('kurang')} />
         <KadStat warna="amber" ikon={<UserX size={16} />} label="Belum ditugaskan" nilai={s.kira('tiada_tugas')} sub="Tiada sebarang jawatan" onClick={() => pergi('tiada_tugas')} />
         <KadStat warna="navy" ikon={<Inbox size={16} />} label="Jawatan kosong" nilai={s.kosongSlot} sub={`${s.wajibKosong.length} JK wajib belum lengkap`} onClick={() => nav('/app/jawatankuasa?kosong=1')} />
       </div>

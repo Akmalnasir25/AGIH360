@@ -1,6 +1,8 @@
+import { SEKSYEN_LALAI } from './buku'
 import templat from './templat.json'
 import type { DataSekolah, Guru, JenisSekolah, Lantikan, StatusAgihan, TugasLuar } from './types'
 import type { Baris, NamaJadual, Stor } from './stor'
+import type { RekaBuku } from './tema'
 
 let seq = 0
 const uid = () => `d${(++seq).toString(36)}${Math.random().toString(36).slice(2, 7)}`
@@ -153,6 +155,7 @@ export function binaDemo(jenis: JenisSekolah = 'SK'): DataSekolah {
     maklumBalas: [
       { id: uid(), guru_id: guru[5].id, tahun, mesej: 'Saya juga jurulatih olahraga peringkat daerah setiap Sabtu. Mohon ambil kira dalam beban saya.', status: 'baru', balasan: null, dicipta: new Date(Date.now() - 7200e3).toISOString() },
     ],
+    buku: SEKSYEN_LALAI.map((x, n) => ({ id: uid(), ...x, imej: null, susunan: n + 1 })),
   }
 }
 
@@ -183,7 +186,7 @@ export class StorDemo implements Stor {
   private senarai(j: NamaJadual): { id: string }[] {
     const peta: Record<NamaJadual, keyof DataSekolah> = {
       guru: 'guru', jawatankuasa: 'jawatankuasa', slot: 'slot', tahap: 'tahap', peranan_jk: 'peranan', tempoh: 'tempoh',
-      gred: 'gred', bidang: 'bidang', tugas_luar: 'tugasLuar', maklum_balas: 'maklumBalas',
+      gred: 'gred', bidang: 'bidang', tugas_luar: 'tugasLuar', maklum_balas: 'maklumBalas', buku_seksyen: 'buku',
     }
     return this.d[peta[j]] as unknown as { id: string }[]
   }
@@ -263,6 +266,9 @@ export class StorDemo implements Stor {
   async simpanTetapan(t: Partial<DataSekolah['tetapan']>) {
     this.strukturSahaja()
     this.d.tetapan = { ...this.d.tetapan, ...t }
+  }
+  async simpanRekaBuku(r: RekaBuku) {
+    this.d.sekolah = { ...this.d.sekolah, reka_buku: r }
   }
   async simpanSekolah(s: Partial<DataSekolah['sekolah']>) {
     this.strukturSahaja()

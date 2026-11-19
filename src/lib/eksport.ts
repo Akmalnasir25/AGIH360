@@ -1,3 +1,4 @@
+import { paletIkut, warnaBahagian, type RekaBuku } from './tema'
 import type { Konteks } from './indeks'
 import type { Sekolah } from './types'
 
@@ -250,7 +251,7 @@ export async function keExcel(s: Sekolah, data: BidangEksport[], k: Konteks) {
   kg.values = ['Bil', 'Nama Guru', 'Gred', 'Masa', 'Mata', 'Indeks', 'Status', 'Senarai Jawatan']
   kg.eachCell((c) => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } } })
   const d = k.data
-  const label: Record<string, string> = { terbeban: 'Terbeban', seimbang: 'Seimbang', kurang: 'Ada ruang', tiada_tugas: 'Belum ditugaskan', dikecualikan: 'Dikecualikan' }
+  const label: Record<string, string> = { terbeban: 'Terbeban', seimbang: 'Seimbang', kurang: 'Beban ringan', tiada_tugas: 'Belum ditugaskan', dikecualikan: 'Dikecualikan' }
   ;[...d.guru].filter((g) => k.hasil.has(g.id)).sort((a, b) => a.nama.localeCompare(b.nama)).forEach((g, i) => {
     const h = k.hasil.get(g.id)!
     const senarai = (k.lantikanGuru.get(g.id) ?? []).map((sid) => {
@@ -295,7 +296,10 @@ export function binaCarta(k: Konteks, data: BidangEksport[]): Carta {
 }
 
 // ───────────────────────── BUKU PENGURUSAN (Word) ─────────────────────────
-export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta) {
+export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta, seksyen: { tajuk: string; isi: string | null; imej: string | null }[] = [], reka?: RekaBuku) {
+  const pl = paletIkut(reka?.palet)
+  const huruf = (i: number) => String.fromCharCode(65 + i)
+  const mula = seksyen.length ? 1 : 0
   const D = await import('docx')
   const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, ShadingType, HeadingLevel, PageBreak, TableOfContents, VerticalAlign } = D
   const garis = { style: BorderStyle.SINGLE, size: 4, color: '7A8BA6' }
@@ -310,11 +314,12 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
   // Kulit
   anak.push(
     P('', { before: 2400 }),
-    P(s.nama.toUpperCase(), { bold: true, size: 36, color: '0B1F3A', tengah: true }),
+    P(s.nama.toUpperCase(), { bold: true, size: 36, color: pl.utama, tengah: true }),
     P([s.alamat, s.daerah, s.negeri].filter(Boolean).join(', '), { size: 20, color: '3A557D', tengah: true, after: 1200 }),
-    P('BUKU PENGURUSAN', { bold: true, size: 64, color: '06926B', tengah: true }),
-    P('SEKOLAH', { bold: true, size: 64, color: '06926B', tengah: true, after: 400 }),
-    P(`SESI ${s.tahun_semasa}`, { bold: true, size: 40, color: 'CF8A0F', tengah: true }),
+    P('BUKU PENGURUSAN', { bold: true, size: 64, color: pl.utama, tengah: true }),
+    P('SEKOLAH', { bold: true, size: 64, color: pl.aksen, tengah: true, after: 400 }),
+    P(`SESI ${s.tahun_semasa}`, { bold: true, size: 40, color: pl.kedua === 'FFFFFF' ? pl.aksen : pl.kedua, tengah: true }),
+    ...(reka?.moto?.trim() ? [P(`“${reka.moto.trim()}”`, { size: 28, color: pl.utama, tengah: true, before: 600 })] : []),
     new Paragraph({ children: [new PageBreak()] }),
   )
   // Isi kandungan — medan Word, dikemas kini automatik ketika fail dibuka
@@ -322,8 +327,35 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
   anak.push(new TableOfContents('Isi Kandungan', { hyperlink: true, headingStyleRange: '1-2' }))
   anak.push(new Paragraph({ children: [new PageBreak()] }))
 
+  // Bab Pengenalan
+  if (seksyen.length) {
+    const { ImageRun } = D
+    anak.push(new Paragraph({ heading: HeadingLevel.HEADING_1, shading: { type: ShadingType.CLEAR, fill: warnaBahagian(pl, 0), color: 'auto' }, children: [new TextRun({ text: 'BAHAGIAN A: PENGENALAN & MAKLUMAT SEKOLAH' })] }))
+    for (const x of seksyen) {
+      anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true, spacing: { before: 240, after: 120 }, children: [new TextRun({ text: x.tajuk.toUpperCase(), color: warnaBahagian(pl, 0) })] }))
+      for (const p of (x.isi ?? '').split(/\n\s*\n/)) {
+        if (!p.trim()) continue
+        const baris = p.split('\n')
+        if (baris.every((b) => /^\s*[-•]\s+/.test(b))) {
+          baris.forEach((b) => anak.push(new Paragraph({ indent: { left: 360, hanging: 260 }, spacing: { after: 40 }, children: [new TextRun({ text: `•  ${b.replace(/^\s*[-•]\s+/, '')}` })] })))
+        } else {
+          anak.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { after: 120 }, children: baris.flatMap((b, i) => [new TextRun({ text: b, break: i > 0 ? 1 : 0 })]) }))
+        }
+      }
+      if (x.imej) {
+        try {
+          const { bait, jenis } = dataUrlKeBait(x.imej)
+          const { w, h } = await saizImej(x.imej)
+          const lebar = Math.min(600, w), tinggi = Math.round((h / w) * lebar)
+          anak.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 120, after: 120 }, children: [new ImageRun({ type: jenis, data: bait, transformation: { width: lebar, height: Math.min(tinggi, 820) } })] }))
+        } catch { /* imej rosak — langkau */ }
+      }
+    }
+    anak.push(new Paragraph({ children: [new PageBreak()] }))
+  }
+
   // Carta organisasi
-  anak.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: 'CARTA ORGANISASI' })] }))
+  anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'CARTA ORGANISASI', color: warnaBahagian(pl, 0) })] }))
   const kotak = (teks: string[], fill: string) => new TableCell({
     borders: tiadaSempadan, verticalAlign: VerticalAlign.CENTER, shading: { type: ShadingType.CLEAR, fill, color: 'auto' },
     margins: { top: 100, bottom: 100, left: 100, right: 100 },
@@ -334,11 +366,11 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [
       new TableRow({ children: [new TableCell({ borders: tiadaSempadan, columnSpan: n, children: [
-        new Table({ alignment: AlignmentType.CENTER, width: { size: 50, type: WidthType.PERCENTAGE }, rows: [new TableRow({ children: [kotak([carta.ketua.jawatan.toUpperCase(), carta.ketua.nama], '0B1F3A')] })] }),
+        new Table({ alignment: AlignmentType.CENTER, width: { size: 50, type: WidthType.PERCENTAGE }, rows: [new TableRow({ children: [kotak([carta.ketua.jawatan.toUpperCase(), carta.ketua.nama], pl.utama)] })] }),
         new Paragraph({ text: '' }),
       ] })] }),
       new TableRow({ children: carta.cabang.map((c) => new TableCell({ borders: tiadaSempadan, margins: { left: 60, right: 60 }, children: [
-        new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [new TableRow({ children: [kotak([c.bidang.toUpperCase(), c.pk ?? ''], '06926B')] })] }),
+        new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [new TableRow({ children: [kotak([c.bidang.toUpperCase(), c.pk ?? ''], warnaBahagian(pl, carta.cabang.indexOf(c) + mula))] })] }),
       ] })) }),
       new TableRow({ children: carta.cabang.map((c) => new TableCell({ borders: tiadaSempadan, margins: { left: 60, right: 60, top: 80 },
         children: c.jk.map((j) => new Paragraph({ spacing: { after: 20 }, children: [new TextRun({ text: `• ${j}`, size: 15 })] })) })) }),
@@ -346,9 +378,10 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
   }))
 
   // Bahagian
-  data.forEach((b) => {
+  data.forEach((b, bi) => {
+    const w = warnaBahagian(pl, bi + mula)
     anak.push(new Paragraph({ children: [new PageBreak()] }))
-    anak.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: `BAHAGIAN ${b.huruf}: ${b.nama.toUpperCase()}` })] }))
+    anak.push(new Paragraph({ heading: HeadingLevel.HEADING_1, shading: { type: ShadingType.CLEAR, fill: w, color: 'auto' }, children: [new TextRun({ text: `BAHAGIAN ${huruf(bi + mula)}: ${b.nama.toUpperCase()}` })] }))
     for (const j of b.jk) {
       anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true, keepLines: true, spacing: { before: 240, after: 80 }, children: [new TextRun({ text: `${j.no}  ${j.nama}${j.kod ? `  (${j.kod})` : ''}` })] }))
       anak.push(new Table({
@@ -356,7 +389,7 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
         rows: j.ahli.map((a, ri) => new TableRow({
           cantSplit: true,
           children: [
-            new TableCell({ borders: sempadan, width: { size: 31, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.CLEAR, fill: 'EEF2F7', color: 'auto' },
+            new TableCell({ borders: sempadan, width: { size: 31, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.CLEAR, fill: pl.lembut, color: 'auto' },
               children: [new Paragraph({ keepNext: ri < j.ahli.length - 1, children: [new TextRun({ text: a.jawatan, bold: true, size: 20 })] })] }),
             new TableCell({ borders: sempadan, width: { size: 69, type: WidthType.PERCENTAGE },
               children: a.nama.map((nm, ni) => new Paragraph({ keepNext: ri < j.ahli.length - 1 || ni < a.nama.length - 1, children: [new TextRun({ text: a.nama.length > 1 ? `${ni + 1}. ${nm}` : nm, size: 20 })] })) }),
@@ -376,8 +409,8 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
     styles: {
       default: { document: { run: { font: 'Arial', size: 20 } } },
       paragraphStyles: [
-        { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', run: { size: 26, bold: true, color: 'FFFFFF' }, paragraph: { shading: { type: ShadingType.CLEAR, fill: '0B1F3A', color: 'auto' }, spacing: { before: 120, after: 200 } } },
-        { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal', run: { size: 22, bold: true, color: '0B1F3A' } },
+        { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', run: { size: 26, bold: true, color: 'FFFFFF' }, paragraph: { shading: { type: ShadingType.CLEAR, fill: pl.utama, color: 'auto' }, spacing: { before: 120, after: 200 } } },
+        { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal', run: { size: 22, bold: true, color: pl.utama } },
       ],
     },
     sections: [{ properties: { page: { margin: { top: 1000, bottom: 1000, left: 1100, right: 1100 } } }, children: anak }],

@@ -1,5 +1,5 @@
 export type JenisSekolah = 'SK' | 'SMK'
-export type Peranan = 'admin' | 'gb' | 'pk' | 'guru'
+export type Peranan = 'admin' | 'gb' | 'pk' | 'su' | 'guru'
 export type StatusGuru = 'aktif' | 'cuti' | 'bertukar'
 
 export interface Sekolah {
@@ -13,6 +13,8 @@ export interface Sekolah {
   logo_url: string | null
   /** Imej kepala surat penuh (data URL) — untuk cetakan */
   kepala_surat?: string | null
+  /** Pilihan reka bentuk Buku Pengurusan (lihat lib/tema.ts) */
+  reka_buku?: unknown
   telefon?: string | null
   nama_ketua: string | null
   jawatan_ketua: string | null
@@ -91,6 +93,9 @@ export interface Kelulusan { status: StatusAgihan; catatan: string | null; dikem
 
 export interface LogAudit { id: string | number; masa: string; pengguna: string | null; tindakan: string; butiran: string | null }
 
+/** Seksyen Bab Pengenalan dalam Buku Pengurusan */
+export interface SeksyenBuku { id: string; tajuk: string; isi: string | null; imej: string | null; susunan: number }
+
 export interface MaklumBalas { id: string; guru_id: string; tahun: number; mesej: string; status: 'baru' | 'selesai'; balasan: string | null; dicipta: string }
 
 /** Semua data satu sekolah untuk satu tahun — dimuat sekali, dikira di pelayar. */
@@ -111,4 +116,5 @@ export interface DataSekolah {
   kelulusan: Kelulusan
   log: LogAudit[]
   maklumBalas: MaklumBalas[]
+  buku: SeksyenBuku[]
 }

@@ -60,7 +60,7 @@ export default function Analisis() {
           <input className="input pl-9" placeholder="Cari guru…" value={cari} onChange={(e) => setCari(e.target.value)} />
         </div>
       </div>
-      <p className="text-xs text-navy-500 mb-3">Indeks <b>1.00</b> = beban purata sekolah · melebihi <b>{t.ambang_tinggi}</b> = terbeban · bawah <b>{t.ambang_rendah}</b> = ada ruang. Klik nama untuk lihat jawatan guru.</p>
+      <p className="text-xs text-navy-500 mb-3">Indeks <b>1.00</b> = beban purata sekolah · melebihi <b>{t.ambang_tinggi}</b> = terbeban · bawah <b>{t.ambang_rendah}</b> = beban ringan. Klik nama untuk lihat jawatan guru.</p>
 
       <div className="kad overflow-hidden">
         <div className="overflow-x-auto">
@@ -92,7 +92,14 @@ export default function Analisis() {
                     <div className="flex items-center gap-2"><div className="flex-1"><BarIndeks nilai={r.h.indeks} rendah={t.ambang_rendah} tinggi={t.ambang_tinggi} /></div><span className={`font-mono font-bold text-xs w-9 text-right ${r.h.status === 'terbeban' ? 'text-rose-600' : ''}`}>{f2(r.h.indeks)}</span></div>
                     <div className="mt-1"><CipStatus s={r.h.status} /></div>
                   </td>
-                  <td className="px-3 py-2.5 text-center font-mono whitespace-nowrap">{f1(r.h.masaLaras)}{r.h.masaAndaian && <div className="text-[10px] font-sans text-amber-600 font-semibold" title="Masa mengajar belum diisi — guna median">andaian</div>}</td>
+                  <td className="px-3 py-2.5 text-center whitespace-nowrap">
+                    {r.h.masaAndaian
+                      ? <span className="cip bg-amber-100 text-amber-800" title={`Belum diisi — indeks guna median ${k.ringkasan.medianMasa}`}>belum diisi</span>
+                      : <span className="font-mono">{r.g.masa_seminggu}</span>}
+                    {!r.h.masaAndaian && Math.abs(r.h.masaLaras - r.g.masa_seminggu) > 0.01 && (
+                      <div className="text-[10px] text-navy-400" title="Masa dikira = masa × faktor kelas peperiksaan + relief">dikira {f1(r.h.masaLaras)}{r.g.kelas_peperiksaan ? ` (×${t.faktor_peperiksaan} pep.)` : ''}</div>
+                    )}
+                  </td>
                   <td className="px-3 py-2.5 text-center font-mono whitespace-nowrap"><b>{f1(r.h.skor)}</b><span className="text-navy-400"> / {f1(r.h.sasaran)}</span></td>
                   <td className="px-3 py-2.5 text-center">{r.bil}</td>
                 </tr>

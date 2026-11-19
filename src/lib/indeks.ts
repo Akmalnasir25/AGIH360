@@ -179,7 +179,7 @@ export function round(n: number, dp = 2) {
 export const LABEL_STATUS: Record<StatusBeban, string> = {
   terbeban: 'Terbeban',
   seimbang: 'Seimbang',
-  kurang: 'Ada ruang',
+  kurang: 'Beban ringan',
   tiada_tugas: 'Belum ditugaskan',
   dikecualikan: 'Dikecualikan',
 }

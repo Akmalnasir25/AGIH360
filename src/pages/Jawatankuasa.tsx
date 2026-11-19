@@ -378,7 +378,7 @@ function PanelGuru({ slotId, tutupSlot, bolehLantik, selepasLantik }: { slotId: 
         <input className="input pl-9 py-2 text-sm" placeholder="Cari guru…" value={cari} onChange={(e) => setCari(e.target.value)} />
       </div>
       <div className="flex rounded-lg bg-navy-50 p-0.5 text-[11px] font-semibold mb-2">
-        {([['semua', 'Semua'], ['ruang', 'Ada ruang'], ['terbeban', 'Terbeban']] as [Tapis, string][]).map(([v, l]) => (
+        {([['semua', 'Semua'], ['ruang', 'Beban ringan'], ['terbeban', 'Terbeban']] as [Tapis, string][]).map(([v, l]) => (
           <button key={v} onClick={() => setTapis(v)} className={`flex-1 px-2 py-1 rounded-md ${tapis === v ? 'bg-white shadow-card text-navy-900' : 'text-navy-500'}`}>{l}</button>
         ))}
       </div>

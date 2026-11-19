@@ -39,7 +39,7 @@ export default function Tetapan() {
           </div>
           <div className="grid grid-cols-2 gap-3 mt-4">
             <Nombor label="Ambang terbeban (>)" v={t.ambang_tinggi} set={(v) => setT({ ...t, ambang_tinggi: v })} step={0.05} />
-            <Nombor label="Ambang ada ruang (<)" v={t.ambang_rendah} set={(v) => setT({ ...t, ambang_rendah: v })} step={0.05} />
+            <Nombor label="Ambang beban ringan (<)" v={t.ambang_rendah} set={(v) => setT({ ...t, ambang_rendah: v })} step={0.05} />
             <Nombor label="Faktor kelas peperiksaan" v={t.faktor_peperiksaan} set={(v) => setT({ ...t, faktor_peperiksaan: v })} step={0.05} />
             <Nombor label="Had jawatan seorang guru" v={t.had_jawatan} set={(v) => setT({ ...t, had_jawatan: v })} step={1} />
           </div>
@@ -136,7 +136,7 @@ function Pengguna() {
       <p className="text-xs text-navy-500 mb-4">Guru dipautkan automatik melalui e-mel dalam senarai Guru. Peranan boleh ditetapkan walaupun orang itu belum pernah log masuk — ia aktif sebaik dia log masuk. Di sini anda tetapkan GB/Pengetua (lulus & muktamad), PK (urus JK & lantik dalam bidangnya) atau Admin.</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input className="input" placeholder="e-mel@moe-dl.edu.my" value={emel} onChange={(e) => setEmel(e.target.value)} />
-        <select className="input sm:w-32" value={p} onChange={(e) => setP(e.target.value)}><option value="gb">GB / Pengetua</option><option value="pk">PK</option><option value="admin">Admin</option><option value="guru">Guru</option></select>
+        <select className="input sm:w-32" value={p} onChange={(e) => setP(e.target.value)}><option value="gb">GB / Pengetua</option><option value="pk">PK</option><option value="admin">Admin</option><option value="su">Setiausaha (dokumen)</option><option value="guru">Guru</option></select>
         <select className="input sm:w-48" value={bidang} onChange={(e) => setBidang(e.target.value)}><option value="">Semua bidang</option>{k.data.bidang.map((b) => <option key={b.id} value={b.id}>{b.nama}</option>)}</select>
         <button onClick={tambah} className="btn-gelap">Tetapkan</button>
       </div>

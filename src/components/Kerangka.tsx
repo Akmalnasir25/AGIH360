@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
-  AlertTriangle, BarChart3, KeyRound, ShieldCheck, ClipboardCheck, Dumbbell, FileDown, FileText, FlaskConical, LayoutDashboard, LogOut, Menu,
+  AlertTriangle, BarChart3, BookOpen, KeyRound, ShieldCheck, ClipboardCheck, Dumbbell, FileDown, FileText, FlaskConical, LayoutDashboard, LogOut, Menu,
   Network, Settings, Sparkles, UserRound, Users, X,
 } from 'lucide-react'
 import { useAplikasi } from '../context/Aplikasi'
@@ -21,6 +21,7 @@ const MENU: { ke: string; label: string; ikon: typeof Users; perlu: Tindakan | n
   { ke: '/app/tugas-luar', label: 'Tugas Luar & Relief', ikon: Dumbbell, perlu: 'tugas_luar' },
   { ke: '/app/kelulusan', label: 'Kelulusan & Log', ikon: ClipboardCheck, perlu: 'log' },
   { ke: '/app/eksport', label: 'Jana Dokumen', ikon: FileDown, perlu: 'eksport' },
+  { ke: '/app/buku', label: 'Buku Pengurusan', ikon: BookOpen, perlu: 'buku' },
   { ke: '/app/surat', label: 'Surat Lantikan', ikon: FileText, perlu: 'surat' },
   { ke: '/app/tetapan', label: 'Tetapan Pemberat', ikon: Settings, perlu: 'urus_tetapan' },
   { ke: '/app/tugas-saya', label: 'Tugas Saya', ikon: UserRound, perlu: null },
@@ -162,7 +163,7 @@ function SepandukSimulasi() {
       <Modal buka={banding} tutup={() => setBanding(false)} tajuk="Sebelum vs selepas simulasi" lebar="max-w-2xl">
         <div className="grid grid-cols-3 gap-2 text-sm text-navy-900">
           <div className="font-semibold text-navy-500" /><div className="font-bold text-center">Sebelum</div><div className="font-bold text-center">Selepas</div>
-          {([['Terbeban', 'terbeban'], ['Seimbang', 'seimbang'], ['Ada ruang', 'kurang'], ['Belum ditugaskan', 'tiada'], ['Jawatan kosong', 'kosong']] as const).map(([l, kk]) => (
+          {([['Terbeban', 'terbeban'], ['Seimbang', 'seimbang'], ['Beban ringan', 'kurang'], ['Belum ditugaskan', 'tiada'], ['Jawatan kosong', 'kosong']] as const).map(([l, kk]) => (
             <div key={kk} className="contents">
               <div className="text-navy-600">{l}</div>
               <div className="text-center font-mono">{r.sebelum[kk]}</div>

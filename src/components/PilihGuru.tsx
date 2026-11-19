@@ -64,7 +64,7 @@ export function PilihGuru({ slotId, tutup }: { slotId: string | null; tutup: () 
           <input autoFocus className="input pl-9" placeholder="Cari nama guru…" value={cari} onChange={(e) => setCari(e.target.value)} />
         </div>
         <div className="flex rounded-xl bg-navy-50 p-1 text-xs font-semibold">
-          {([['semua', 'Semua'], ['ruang', 'Ada ruang'], ['seimbang', 'Seimbang'], ['terbeban', 'Terbeban']] as [Tapis, string][]).map(([v, l]) => (
+          {([['semua', 'Semua'], ['ruang', 'Beban ringan'], ['seimbang', 'Seimbang'], ['terbeban', 'Terbeban']] as [Tapis, string][]).map(([v, l]) => (
             <button key={v} onClick={() => setTapis(v)} className={`px-3 py-1.5 rounded-lg ${tapis === v ? 'bg-white shadow-card text-navy-900' : 'text-navy-500'}`}>{l}</button>
           ))}
         </div>

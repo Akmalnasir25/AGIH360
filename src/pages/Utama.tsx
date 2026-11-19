@@ -96,7 +96,7 @@ export default function Utama() {
             [ClipboardPaste, 'Tampal terus dari Excel', 'Salin senarai guru dari Excel atau Google Sheet, tampal, siap. Tiada taip semula.'],
             [Scale, 'Indeks Beban satu angka', 'Masa mengajar + skor jawatankuasa, dibanding dengan median sekolah sendiri. 1.00 = setara.'],
             [Wand2, 'Pratonton sebelum lantik', 'Nampak terus 0.78 → 0.97 jika dilantik. Calon paling ringan di atas, dengan amaran automatik.'],
-            [BarChart3, 'Papan pemuka telus', 'Siapa terbeban, siapa ada ruang, siapa belum ditugaskan, JK mana masih kosong — sekali pandang.'],
+            [BarChart3, 'Papan pemuka telus', 'Siapa terbeban, siapa beban ringan, siapa belum ditugaskan, JK mana masih kosong — sekali pandang.'],
             [FileText, 'Surat lantikan sekali klik', 'Jana surat untuk semua guru dengan Lampiran senarai tugas. Cetak atau simpan PDF.'],
             [History, 'Salin tahun lepas', 'Mula sesi baharu dengan lantikan tahun lepas, kemudian laras. Guru bertukar keluar diabaikan.'],
           ].map(([I, t, d]) => {
@@ -135,7 +135,7 @@ export default function Utama() {
               <div className="flex justify-between"><span>0.6 × 0.93 + 0.4 × 1.07</span><span className="text-brand-700 font-bold text-lg">0.99</span></div>
             </div>
             <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
-              <div className="rounded-xl bg-sky-50 text-sky-700 p-2">&lt; 0.70<br />Ada ruang</div>
+              <div className="rounded-xl bg-sky-50 text-sky-700 p-2">&lt; 0.70<br />Beban ringan</div>
               <div className="rounded-xl bg-brand-50 text-brand-700 p-2">0.70 – 1.30<br />Seimbang</div>
               <div className="rounded-xl bg-rose-50 text-rose-700 p-2">&gt; 1.30<br />Terbeban</div>
             </div>

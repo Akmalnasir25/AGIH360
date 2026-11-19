@@ -5,19 +5,21 @@ import type { Peranan } from './types'
  *  admin  — setiausaha sistem: semua
  *  gb     — Guru Besar / Pengetua: semua + lulus/muktamad
  *  pk     — Penolong Kanan: urus JK & lantik dalam bidangnya (atau semua jika tiada bidang ditetapkan); tugas luar & relief; surat lantikan
+ *  su     — Setiausaha dokumen: Jana Dokumen, Buku Pengurusan (Bab Pengenalan), Surat Lantikan
  *  guru   — Tugas Saya sahaja
  */
 export type Tindakan =
   | 'lihat_pengurusan' | 'urus_guru' | 'urus_tetapan' | 'surat' | 'eksport'
-  | 'urus_jk' | 'lantik' | 'hantar_semakan' | 'lulus' | 'tugas_luar' | 'log'
+  | 'urus_jk' | 'lantik' | 'hantar_semakan' | 'lulus' | 'tugas_luar' | 'log' | 'buku'
 
 export function boleh(p: Peranan, t: Tindakan, bidangId?: string | null, bidangSaya?: string | null): boolean {
   if (p === 'admin' || p === 'gb') return true
   if (p === 'pk') {
     if (t === 'urus_jk' || t === 'lantik') return !bidangSaya || !bidangId || bidangSaya === bidangId
-    return ['lihat_pengurusan', 'eksport', 'hantar_semakan', 'log', 'tugas_luar', 'surat'].includes(t)
+    return ['lihat_pengurusan', 'eksport', 'hantar_semakan', 'log', 'tugas_luar', 'surat', 'buku'].includes(t)
   }
+  if (p === 'su') return ['eksport', 'surat', 'buku'].includes(t)
   return false
 }
 
-export const LABEL_PERANAN: Record<Peranan, string> = { admin: 'Admin', gb: 'GB / Pengetua', pk: 'PK', guru: 'Guru' }
+export const LABEL_PERANAN: Record<Peranan, string> = { admin: 'Admin', gb: 'GB / Pengetua', pk: 'PK', su: 'Setiausaha', guru: 'Guru' }

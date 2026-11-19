@@ -7,6 +7,9 @@ import { TajukHalaman } from '../components/Kerangka'
 import { Avatar, CipStatus, Kosong, Modal, f2, useSahkan } from '../components/ui'
 import type { Guru as G, Gred } from '../lib/types'
 
+/** Staf sokongan — bukan guru, tidak perlu masa mengajar / e-mel DELIMa */
+const staf = (g: G) => /^staf sokongan/i.test(g.tag ?? '')
+
 const KECUALI = /guru besar|pengetua|^pk|penolong kanan|penyelia petang|gkmp|kanan mata pelajaran/i
 
 export default function Guru() {
@@ -27,12 +30,12 @@ export default function Guru() {
   }
   const senarai = useMemo(() => (k ? k.data.guru
     .filter((g) => !cari || g.nama.toLowerCase().includes(cari.toLowerCase()))
-    .filter((g) => tapis === 'semua' || (tapis === 'masa' ? !(g.masa_seminggu > 0) : !g.emel))
+    .filter((g) => tapis === 'semua' || (tapis === 'masa' ? !(g.masa_seminggu > 0) && !staf(g) : !g.emel && !staf(g)))
     .sort((a, b) => a.nama.localeCompare(b.nama)) : []), [k, cari, tapis])
   if (!k) return null
   const gred = new Map(k.data.gred.map((g) => [g.id, g.kod]))
-  const bilTiadaMasa = k.data.guru.filter((g) => !(g.masa_seminggu > 0)).length
-  const bilTiadaEmel = k.data.guru.filter((g) => !g.emel).length
+  const bilTiadaMasa = k.data.guru.filter((g) => !(g.masa_seminggu > 0) && !staf(g)).length
+  const bilTiadaEmel = k.data.guru.filter((g) => !g.emel && !staf(g)).length
 
   return (
     <div className="animate-naik">
