@@ -97,7 +97,7 @@ export interface Kelulusan { status: StatusAgihan; catatan: string | null; dikem
 export interface LogAudit { id: string | number; masa: string; pengguna: string | null; tindakan: string; butiran: string | null }
 
 /** Seksyen Bab Pengenalan dalam Buku Pengurusan */
-export interface SeksyenBuku { id: string; tajuk: string; isi: string | null; imej: string | null; susunan: number }
+export interface SeksyenBuku { id: string; tajuk: string; isi: string | null; imej: string | null; susunan: number; /** null = Bahagian A; selainnya bab bidang tersebut */ bidang_id?: string | null }
 
 export interface MaklumBalas { id: string; guru_id: string; tahun: number; mesej: string; status: 'baru' | 'selesai'; balasan: string | null; dicipta: string }
 

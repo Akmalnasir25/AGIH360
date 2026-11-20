@@ -9,17 +9,31 @@ const X: CSSProperties = { printColorAdjust: 'exact', WebkitPrintColorAdjust: 'e
 /** Satu halaman A4 (skrin: nisbah A4; cetak: tinggi tetap & pecah halaman) */
 const HALAMAN = 'relative overflow-hidden w-full aspect-[210/297] bg-white'
 
+/** Asingkan seksyen: Bahagian A (tiada bidang / bidang tiada dalam buku) vs ikut bab bidang. */
+export function asingSeksyen(seksyen: SeksyenBuku[], data: { id: string }[]) {
+  const ada = new Set(data.map((b) => b.id))
+  const ikut = new Map<string, SeksyenBuku[]>()
+  const a: SeksyenBuku[] = []
+  for (const x of seksyen) {
+    if (x.bidang_id && ada.has(x.bidang_id)) ikut.set(x.bidang_id, [...(ikut.get(x.bidang_id) ?? []), x])
+    else a.push(x)
+  }
+  return { a, ikut }
+}
+
 export interface BahagianBuku { huruf: string; tajuk: string; warna: string; item: { kod: string; teks: string }[] }
 
 /** Susun bahagian buku: A = Pengenalan & Maklumat Sekolah (seksyen + carta + senarai guru), kemudian setiap bidang. */
 export function binaBahagian(seksyen: SeksyenBuku[], data: BidangEksport[], p: Palet, denganSenarai = true): BahagianBuku[] {
   const out: BahagianBuku[] = []
   const huruf = (i: number) => String.fromCharCode(65 + i)
-  const a = [...seksyen.map((x) => x.tajuk), 'Carta Organisasi', ...(denganSenarai ? ['Senarai Guru & Staf'] : [])]
+  const { a: sA, ikut } = asingSeksyen(seksyen, data)
+  const a = [...sA.map((x) => x.tajuk), 'Carta Organisasi', ...(denganSenarai ? ['Senarai Guru & Staf'] : [])]
   out.push({ huruf: 'A', tajuk: 'Pengenalan & Maklumat Sekolah', warna: warnaBahagian(p, 0), item: a.map((t, i) => ({ kod: `A${i + 1}`, teks: t })) })
   data.forEach((b) => {
     const i = out.length, h = huruf(i)
-    out.push({ huruf: h, tajuk: b.nama, warna: warnaBahagian(p, i), item: b.jk.map((j, n) => ({ kod: `${h}${n + 1}`, teks: j.nama })) })
+    const teks = [...(ikut.get(b.id) ?? []).map((x) => x.tajuk), ...b.jk.map((j) => j.nama)]
+    out.push({ huruf: h, tajuk: b.nama, warna: warnaBahagian(p, i), item: teks.map((t, n) => ({ kod: `${h}${n + 1}`, teks: t })) })
   })
   return out
 }
@@ -48,7 +62,7 @@ function perenggan(isi: string, w: string): ReactNode[] {
   }).filter(Boolean) as ReactNode[]
 }
 
-function binaBlokA(b: BahagianBuku, seksyen: SeksyenBuku[], carta: ReturnType<typeof binaCarta>, guru: KumpulanGuruBuku[], p: Palet, telefon: boolean): Blok[] {
+function blokSeksyen(b: BahagianBuku, seksyen: SeksyenBuku[]): Blok[] {
   const out: Blok[] = []
   seksyen.forEach((x, i) => {
     const kod = b.item[i].kod
@@ -63,6 +77,11 @@ function binaBlokA(b: BahagianBuku, seksyen: SeksyenBuku[], carta: ReturnType<ty
     if (x.imej) out.push({ key: `s${x.id}-img`, kod: ps.length ? undefined : kod, el: <img src={x.imej} alt="" className="mx-auto max-w-full max-h-[900px] rounded-xl border border-slate-200" /> })
     out[out.length - 1] = { ...out[out.length - 1], el: <div className="pb-6">{out[out.length - 1].el}</div> }
   })
+  return out
+}
+
+function binaBlokA(b: BahagianBuku, seksyen: SeksyenBuku[], carta: ReturnType<typeof binaCarta>, guru: KumpulanGuruBuku[], p: Palet, telefon: boolean): Blok[] {
+  const out: Blok[] = blokSeksyen(b, seksyen)
   out.push({ key: 'carta', kod: b.item[seksyen.length].kod, el: <Carta carta={carta} p={p} kod={b.item[seksyen.length].kod} w={b.warna} /> })
   const kodGuru = b.item[seksyen.length + 1]?.kod
   if (kodGuru) {
@@ -156,9 +175,12 @@ export function BukuPratonton({ k, data, reka }: { k: Konteks; data: BidangEkspo
   const blokBhg = useMemo(() => {
     const carta = binaCarta(k, data)
     const guru = denganSenarai ? senaraiGuruBuku(k.data) : []
-    return bhg.map((b, bi) => bi === 0
-      ? binaBlokA(b, seksyen, carta, guru, p, telefon)
-      : (data[bi - 1]?.jk ?? []).map((j, ji): Blok => ({ key: `${b.huruf}-${j.no}`, kod: b.item[ji].kod, el: <IsiJK j={j} kod={b.item[ji].kod} w={b.warna} gaya={reka.isi} p={p} /> })))
+    const { a: sA, ikut } = asingSeksyen(seksyen, data)
+    return bhg.map((b, bi) => {
+      if (bi === 0) return binaBlokA(b, sA, carta, guru, p, telefon)
+      const bd = data[bi - 1], sB = bd ? ikut.get(bd.id) ?? [] : [], n = sB.length
+      return [...blokSeksyen(b, sB), ...(bd?.jk ?? []).map((j, ji): Blok => ({ key: `${b.huruf}-${j.no}`, kod: b.item[n + ji].kod, el: <IsiJK j={j} kod={b.item[n + ji].kod} w={b.warna} gaya={reka.isi} p={p} /> }))]
+    })
   }, [k, data, bhg, seksyen, p, denganSenarai, telefon, reka.isi])
   const semuaBlok = useMemo(() => blokBhg.flat(), [blokBhg])
   const { tinggi, ukuran } = useTinggi(semuaBlok)
@@ -280,7 +302,7 @@ function Kaki({ s, w, gelap = false, ms }: { s: Sekolah; w: string; gelap?: bool
 export function Kulit({ s, p, reka, bhg }: { s: Sekolah; p: Palet; reka: RekaBuku; bhg: BahagianBuku[] }) {
   const moto = reka.moto?.trim()
   const tajukBawah = (
-    <div className="flex">{bhg.slice(0, 5).map((b) => (
+    <div className="flex">{bhg.slice(0, 6).map((b) => (
       <div key={b.huruf} className="flex-1 px-3 py-3 text-white" style={{ background: hex(b.warna), ...X }}>
         <div className="text-[8px] font-bold tracking-widest opacity-80">BAHAGIAN {b.huruf}</div>
         <div className="text-[10px] font-extrabold uppercase leading-tight">{b.tajuk.replace(/ & Maklumat Sekolah/, '')}</div>

@@ -10,16 +10,16 @@ export interface Palet {
 }
 
 export const PALET: Palet[] = [
-  { id: 'gemilang', nama: 'Jalur Gemilang', utama: '16207A', aksen: 'D62828', kedua: 'F2B705', lembut: 'EEF1FB', bahagian: ['16207A', 'D62828', 'E0A100', '2D4FD6', '0F766E'] },
-  { id: 'laut', nama: 'Biru Laut', utama: '0B2545', aksen: '13A89E', kedua: 'F2C14E', lembut: 'E8F4F3', bahagian: ['0B2545', '13A89E', '1F6FB2', 'E09F3E', '6D597A'] },
-  { id: 'zamrud', nama: 'Hijau Zamrud', utama: '064E3B', aksen: '10B981', kedua: 'FBBF24', lembut: 'ECFDF5', bahagian: ['064E3B', '10B981', 'D97706', '0E7490', '65A30D'] },
-  { id: 'ungu', nama: 'Ungu Moden', utama: '2E1065', aksen: '8B5CF6', kedua: '22D3EE', lembut: 'F3F0FF', bahagian: ['5B21B6', 'DB2777', '0891B2', '7C3AED', 'EA580C'] },
-  { id: 'marun', nama: 'Merah Marun', utama: '5B1220', aksen: 'D9485F', kedua: 'F4B942', lembut: 'FDF2F4', bahagian: ['7F1D1D', 'C2410C', 'B45309', '9F1239', '57534E'] },
-  { id: 'senja', nama: 'Jingga Senja', utama: '7C2D12', aksen: 'F97316', kedua: 'FACC15', lembut: 'FFF7ED', bahagian: ['C2410C', 'F59E0B', 'DC2626', '9A3412', 'CA8A04'] },
-  { id: 'teal', nama: 'Teal Segar', utama: '134E4A', aksen: '14B8A6', kedua: 'A3E635', lembut: 'F0FDFA', bahagian: ['0F766E', '0EA5E9', '65A30D', '14B8A6', '0369A1'] },
-  { id: 'bunga', nama: 'Merah Jambu Ceria', utama: '831843', aksen: 'EC4899', kedua: 'FB923C', lembut: 'FDF2F8', bahagian: ['BE185D', 'F472B6', 'F97316', 'A855F7', 'E11D48'] },
-  { id: 'pastel', nama: 'Pastel Lembut', utama: '334155', aksen: '7DA2E8', kedua: 'F6C177', lembut: 'F5F7FB', bahagian: ['6F8FD8', 'E88A80', 'E6B25C', '6BB894', 'A58BD6'] },
-  { id: 'grafit', nama: 'Grafit Korporat', utama: '111827', aksen: '0EA5E9', kedua: '9CA3AF', lembut: 'F3F4F6', bahagian: ['1F2937', '0EA5E9', '475569', '0F766E', '334155'] },
+  { id: 'gemilang', nama: 'Jalur Gemilang', utama: '16207A', aksen: 'D62828', kedua: 'F2B705', lembut: 'EEF1FB', bahagian: ['16207A', 'D62828', 'E0A100', '2D4FD6', '0F766E', '7C3AED'] },
+  { id: 'laut', nama: 'Biru Laut', utama: '0B2545', aksen: '13A89E', kedua: 'F2C14E', lembut: 'E8F4F3', bahagian: ['0B2545', '13A89E', '1F6FB2', 'E09F3E', '6D597A', 'C2410C'] },
+  { id: 'zamrud', nama: 'Hijau Zamrud', utama: '064E3B', aksen: '10B981', kedua: 'FBBF24', lembut: 'ECFDF5', bahagian: ['064E3B', '10B981', 'D97706', '0E7490', '65A30D', '7C3AED'] },
+  { id: 'ungu', nama: 'Ungu Moden', utama: '2E1065', aksen: '8B5CF6', kedua: '22D3EE', lembut: 'F3F0FF', bahagian: ['5B21B6', 'DB2777', '0891B2', '7C3AED', 'EA580C', '16A34A'] },
+  { id: 'marun', nama: 'Merah Marun', utama: '5B1220', aksen: 'D9485F', kedua: 'F4B942', lembut: 'FDF2F4', bahagian: ['7F1D1D', 'C2410C', 'B45309', '9F1239', '57534E', '1E3A8A'] },
+  { id: 'senja', nama: 'Jingga Senja', utama: '7C2D12', aksen: 'F97316', kedua: 'FACC15', lembut: 'FFF7ED', bahagian: ['C2410C', 'F59E0B', 'DC2626', '9A3412', 'CA8A04', '0F766E'] },
+  { id: 'teal', nama: 'Teal Segar', utama: '134E4A', aksen: '14B8A6', kedua: 'A3E635', lembut: 'F0FDFA', bahagian: ['0F766E', '0EA5E9', '65A30D', '14B8A6', '0369A1', '7C3AED'] },
+  { id: 'bunga', nama: 'Merah Jambu Ceria', utama: '831843', aksen: 'EC4899', kedua: 'FB923C', lembut: 'FDF2F8', bahagian: ['BE185D', 'F472B6', 'F97316', 'A855F7', 'E11D48', '0891B2'] },
+  { id: 'pastel', nama: 'Pastel Lembut', utama: '334155', aksen: '7DA2E8', kedua: 'F6C177', lembut: 'F5F7FB', bahagian: ['6F8FD8', 'E88A80', 'E6B25C', '6BB894', 'A58BD6', '5FB3C4'] },
+  { id: 'grafit', nama: 'Grafit Korporat', utama: '111827', aksen: '0EA5E9', kedua: '9CA3AF', lembut: 'F3F4F6', bahagian: ['1F2937', '0EA5E9', '475569', '0F766E', '334155', '7C3AED'] },
 ]
 
 export type GayaKulit = 'jalur' | 'geometri' | 'minimal' | 'bingkai'

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowDown, ArrowUp, ImagePlus, Plus, Save, Trash2, UserCog } from 'lucide-react'
+import { Accessibility, ArrowDown, ArrowUp, ImagePlus, Plus, Save, Trash2, UserCog } from 'lucide-react'
 import { mampatImej } from '../components/KepalaSurat'
 import { useAplikasi } from '../context/Aplikasi'
 import { TajukHalaman } from '../components/Kerangka'
@@ -7,6 +7,7 @@ import type { NamaJadual } from '../lib/stor'
 import { supabase } from '../lib/supabase'
 import type { Sekolah, Tetapan as T } from '../lib/types'
 import { WARNA_BIDANG, useSahkan } from '../components/ui'
+import { TEMPLAT_PPKI, adaPPKI, aktifkanPPKI } from '../lib/templatPPKI'
 
 export default function Tetapan() {
   const { k, ubah, stor } = useAplikasi()
@@ -208,6 +209,10 @@ function UrusBidang() {
     if (!(await sahkan(`Buang bidang "${b.nama}"?`, { butang: 'Buang', bahaya: true }))) return
     try { setRalat(null); await ubah((s) => s.buang('bidang', b.id)); setR(null) } catch (e) { setRalat((e as Error).message) }
   }
+  const aktifPPKI = async () => {
+    if (!(await sahkan(`Aktifkan bidang Pendidikan Khas (PPKI)? ${TEMPLAT_PPKI.length} JK standard PPKI akan dicipta dengan slot kosong — boleh diubah atau dibuang kemudian.`, { tajuk: 'Aktifkan Pendidikan Khas', butang: 'Aktifkan', bahaya: false }))) return
+    try { setRalat(null); await ubah((s) => aktifkanPPKI(s, k.data).then(() => undefined)) } catch (e) { setRalat((e as Error).message) }
+  }
   return (
     <div className="kad p-5">
       {elSahkan}
@@ -218,6 +223,13 @@ function UrusBidang() {
           {berubah && <button onClick={simpan} className="btn-utama py-1 text-xs"><Save size={13} /> Simpan</button>}
         </div>
       </div>
+      {!adaPPKI(k.data) && !berubah && (
+        <div className="mb-3 rounded-xl border border-violet-200 bg-violet-50 p-3 flex flex-wrap items-center gap-3">
+          <Accessibility size={18} className="text-violet-600 shrink-0" />
+          <div className="flex-1 min-w-[200px] text-xs text-violet-900"><b>Sekolah ada PPKI?</b> Aktifkan bidang Pendidikan Khas dengan {TEMPLAT_PPKI.length} JK standard PPKI (slot kosong). Ia menjadi satu bab dalam Buku Pengurusan.</div>
+          <button onClick={aktifPPKI} className="btn-utama py-1 text-xs">Aktifkan Pendidikan Khas</button>
+        </div>
+      )}
       <p className="text-xs text-navy-500 mb-3">Bahagian dalam Agih Tugas, Senarai AJK & Buku Pengurusan (cth. Pentadbiran, Kurikulum, HEM, Kokurikulum, Pendidikan Khas). Susunan di sini = susunan bahagian dalam buku.</p>
       {ralat && <div className="text-xs text-rose-600 mb-2">{ralat}</div>}
       <div className="space-y-1.5">

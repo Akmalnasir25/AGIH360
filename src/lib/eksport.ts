@@ -7,7 +7,7 @@ import { isiKepala } from './kepala'
 /** Struktur senarai jawatankuasa sedia untuk dieksport */
 export interface BarisAhli { jawatan: string; nama: string[] }  // nama[] > 1 bila peranan sama digabung (cth AJK)
 export interface JKEksport { no: string; kod: string | null; nama: string; tahap: string; tempoh: string; ahli: BarisAhli[]; kosong: number; bidangTugas: string[] }
-export interface BidangEksport { huruf: string; nama: string; jk: JKEksport[] }
+export interface BidangEksport { id: string; huruf: string; nama: string; jk: JKEksport[] }
 export interface Skop { bidang?: string[]; jk?: string[] }
 export interface Pilihan { tunjukKosong: boolean; gabungPeranan: boolean }
 
@@ -27,6 +27,7 @@ export function kumpul(k: Konteks, skop: Skop, p: Pilihan): BidangEksport[] {
       .sort((a, c) => a.susunan - c.susunan)
     if (!jks.length) return
     hasil.push({
+      id: b.id,
       huruf: HURUF[bi] ?? String(bi + 1),
       nama: b.nama,
       jk: jks.map((j, ji) => {
@@ -309,6 +310,7 @@ const KATA_BIDANG: [RegExp, RegExp][] = [
   [/^kurikulum/i, /\bkurikulum\b|pentadbiran/i],  // \b: elak padan "Kokurikulum"
   [/hal ehwal|hem/i, /hem|hal ehwal/i],
   [/kokurikulum|koku/i, /koku/i],
+  [/pendidikan khas|ppki/i, /khas|ppki/i],
 ]
 
 export function binaCarta(k: Konteks, data: BidangEksport[]): Carta {
@@ -328,7 +330,7 @@ export function binaCarta(k: Konteks, data: BidangEksport[]): Carta {
 }
 
 // ───────────────────────── BUKU PENGURUSAN (Word) ─────────────────────────
-export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta, seksyen: { tajuk: string; isi: string | null; imej: string | null }[] = [], reka?: RekaBuku, guru: KumpulanGuruBuku[] = []) {
+export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta, seksyen: { tajuk: string; isi: string | null; imej: string | null; bidang_id?: string | null }[] = [], reka?: RekaBuku, guru: KumpulanGuruBuku[] = []) {
   const pl = paletIkut(reka?.palet)
   const huruf = (i: number) => String.fromCharCode(65 + i)
   const mula = 1  // Bahagian A = Pengenalan & Maklumat Sekolah (sentiasa ada)
@@ -361,10 +363,13 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
 
   // Bab Pengenalan
   anak.push(new Paragraph({ heading: HeadingLevel.HEADING_1, shading: { type: ShadingType.CLEAR, fill: warnaBahagian(pl, 0), color: 'auto' }, children: [new TextRun({ text: 'BAHAGIAN A: PENGENALAN & MAKLUMAT SEKOLAH' })] }))
-  if (seksyen.length) {
+  // Seksyen tanpa bidang (atau bidangnya tiada dalam buku) → Bahagian A; selainnya di awal bab bidang
+  const adaBidang = new Set(data.map((b) => b.id))
+  const seksyenA = seksyen.filter((x) => !x.bidang_id || !adaBidang.has(x.bidang_id))
+  const tulisSeksyen = async (senarai: typeof seksyen, warna: string) => {
     const { ImageRun } = D
-    for (const x of seksyen) {
-      anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true, spacing: { before: 240, after: 120 }, children: [new TextRun({ text: x.tajuk.toUpperCase(), color: warnaBahagian(pl, 0) })] }))
+    for (const x of senarai) {
+      anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true, spacing: { before: 240, after: 120 }, children: [new TextRun({ text: x.tajuk.toUpperCase(), color: warna })] }))
       for (const p of (x.isi ?? '').split(/\n\s*\n/)) {
         if (!p.trim()) continue
         const baris = p.split('\n')
@@ -383,6 +388,9 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
         } catch { /* imej rosak — langkau */ }
       }
     }
+  }
+  if (seksyenA.length) {
+    await tulisSeksyen(seksyenA, warnaBahagian(pl, 0))
     anak.push(new Paragraph({ children: [new PageBreak()] }))
   }
 
@@ -434,10 +442,11 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
   }
 
   // Bahagian
-  data.forEach((b, bi) => {
+  for (const [bi, b] of data.entries()) {
     const w = warnaBahagian(pl, bi + mula)
     anak.push(new Paragraph({ children: [new PageBreak()] }))
     anak.push(new Paragraph({ heading: HeadingLevel.HEADING_1, shading: { type: ShadingType.CLEAR, fill: w, color: 'auto' }, children: [new TextRun({ text: `BAHAGIAN ${huruf(bi + mula)}: ${b.nama.toUpperCase()}` })] }))
+    await tulisSeksyen(seksyen.filter((x) => x.bidang_id === b.id), w)
     for (const j of b.jk) {
       anak.push(new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true, keepLines: true, spacing: { before: 240, after: 80 }, children: [new TextRun({ text: `${j.no}  ${j.nama}${j.kod ? `  (${j.kod})` : ''}` })] }))
       anak.push(new Table({
@@ -457,7 +466,7 @@ export async function keWordBuku(s: Sekolah, data: BidangEksport[], carta: Carta
         j.bidangTugas.forEach((t, i) => anak.push(new Paragraph({ indent: { left: 360, hanging: 260 }, spacing: { after: 30 }, children: [new TextRun({ text: `${i + 1}.  ${t}`, size: 19 })] })))
       }
     }
-  })
+  }
 
   const doc = new Document({
     creator: 'AGIH360', title: `Buku Pengurusan ${s.nama} ${s.tahun_semasa}`,

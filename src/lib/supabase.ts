@@ -20,6 +20,18 @@ function semak<T>(r: { data: T; error: { message: string } | null }): T {
 }
 
 const TAHUN_SEJARAH = 3
+const SAIZ_HALAMAN = 1000 // had baris lalai PostgREST (max-rows)
+
+/** Baca semua baris secara berhalaman — PostgREST memotong pada 1000 baris setiap permintaan. */
+async function semuaBaris<T>(bina: () => { range: (a: number, b: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }> }) {
+  const data: T[] = []
+  for (let mula = 0; ; mula += SAIZ_HALAMAN) {
+    const r = await bina().range(mula, mula + SAIZ_HALAMAN - 1)
+    if (r.error) return { data: null, error: r.error }
+    data.push(...(r.data ?? []))
+    if ((r.data?.length ?? 0) < SAIZ_HALAMAN) return { data, error: null }
+  }
+}
 
 export class StorSupabase implements Stor {
   mod = 'live' as const
@@ -41,14 +53,14 @@ export class StorSupabase implements Stor {
       c.from('gred').select('id,kod,peranan,faktor,susunan').eq('school_id', id).order('susunan'),
       c.from('bidang').select('id,nama,warna,susunan').eq('school_id', id).order('susunan'),
       c.from('guru').select('id,nama,emel,telefon,gred_id,masa_seminggu,kelas_peperiksaan,status,dikecualikan,tag,kepakaran').eq('school_id', id).order('nama'),
-      c.from('jawatankuasa').select('id,bidang_id,kod,nama,tahap_id,tempoh_id,wajib,catatan,susunan,bidang_tugas').eq('school_id', id).eq('diarkib', false).order('susunan'),
-      c.from('slot').select('id,jawatankuasa_id,peranan_id,label,susunan').eq('school_id', id).eq('diarkib', false).order('susunan'),
-      c.from('lantikan').select('id,tahun,slot_id,guru_id,jk_nama,peranan_nama,bidang_nama').eq('school_id', id).gte('tahun', tahun - TAHUN_SEJARAH).lte('tahun', tahun),
+      semuaBaris(() => c.from('jawatankuasa').select('id,bidang_id,kod,nama,tahap_id,tempoh_id,wajib,catatan,susunan,bidang_tugas').eq('school_id', id).eq('diarkib', false).order('susunan').order('id')),
+      semuaBaris(() => c.from('slot').select('id,jawatankuasa_id,peranan_id,label,susunan').eq('school_id', id).eq('diarkib', false).order('susunan').order('id')),
+      semuaBaris(() => c.from('lantikan').select('id,tahun,slot_id,guru_id,jk_nama,peranan_nama,bidang_nama').eq('school_id', id).gte('tahun', tahun - TAHUN_SEJARAH).lte('tahun', tahun).order('id')),
       c.from('tugas_luar').select('id,guru_id,tahun,jenis,keterangan,nilai').eq('school_id', id).gte('tahun', tahun - TAHUN_SEJARAH),
       c.from('kelulusan').select('status,catatan,dikemaskini').eq('school_id', id).eq('tahun', tahun).maybeSingle(),
       c.from('log_audit').select('id,masa,pengguna,tindakan,butiran').eq('school_id', id).order('masa', { ascending: false }).limit(200),
       c.from('maklum_balas').select('id,guru_id,tahun,mesej,status,balasan,dicipta').eq('school_id', id).order('dicipta', { ascending: false }),
-      c.from('buku_seksyen').select('id,tajuk,isi,imej,susunan').eq('school_id', id).order('susunan'),
+      c.from('buku_seksyen').select('id,tajuk,isi,imej,susunan,bidang_id').eq('school_id', id).order('susunan'),
     ])
     const num = <T extends Record<string, unknown>>(rows: T[] | null, keys: string[]) =>
       (rows ?? []).map((r) => { const o: Record<string, unknown> = { ...r }; keys.forEach((k) => (o[k] = Number(o[k]))); return o as T })

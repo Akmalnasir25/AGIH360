@@ -32,7 +32,7 @@ export function KandunganPengenalan() {
     <div className="animate-naik">
       {elSahkan}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <p className="text-sm text-navy-500">Seksyen ini menjadi <b>Bahagian A: Pengenalan & Maklumat Sekolah</b> dalam buku. Susun dengan anak panah; sunting untuk tambah teks atau imej.</p>
+        <p className="text-sm text-navy-500">Seksyen ini menjadi <b>Bahagian A: Pengenalan & Maklumat Sekolah</b> dalam buku, kecuali yang ditanda bab lain (cth. Hala Tuju PPKI → Bab Pendidikan Khas). Susun dengan anak panah; sunting untuk tambah teks atau imej.</p>
         <button onClick={() => setSunting({ tajuk: '', isi: '', imej: null, susunan: seterus })} className="btn-utama"><Plus size={16} /> Seksyen</button>
       </div>
 
@@ -47,7 +47,8 @@ export function KandunganPengenalan() {
               <div className="flex items-start gap-3">
                 <div className="h-8 w-8 shrink-0 rounded-full bg-navy-900 text-white text-sm font-bold flex items-center justify-center">{i + 1}</div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold">{x.tajuk}</h3>
+                  <h3 className="font-bold flex flex-wrap items-center gap-2">{x.tajuk}
+                    {x.bidang_id && <span className="text-[10px] font-semibold rounded-full bg-violet-100 text-violet-700 px-2 py-0.5">Bab {k.data.bidang.find((b) => b.id === x.bidang_id)?.nama ?? '—'}</span>}</h3>
                   {x.isi && <p className="mt-1 text-sm text-navy-600 whitespace-pre-wrap line-clamp-6">{x.isi}</p>}
                   {x.imej && <img src={x.imej} alt="" className="mt-2 max-h-40 rounded-lg border border-navy-100" />}
                 </div>
@@ -68,7 +69,8 @@ export function KandunganPengenalan() {
 }
 
 function SuntingSeksyen({ x, tutup }: { x: Partial<SeksyenBuku>; tutup: () => void }) {
-  const { ubah } = useAplikasi()
+  const { ubah, k } = useAplikasi()
+  const bidang = [...(k?.data.bidang ?? [])].sort((a, b) => a.susunan - b.susunan)
   const [f, setF] = useState<Partial<SeksyenBuku>>(x)
   const [sibuk, setSibuk] = useState(false)
   const [ralat, setRalat] = useState<string | null>(null)
@@ -81,14 +83,21 @@ function SuntingSeksyen({ x, tutup }: { x: Partial<SeksyenBuku>; tutup: () => vo
     if (!f.tajuk?.trim()) { setRalat('Tajuk diperlukan.'); return }
     setSibuk(true)
     try {
-      await ubah((s) => s.simpan('buku_seksyen', { id: f.id, tajuk: f.tajuk!.trim(), isi: f.isi?.trim() || null, imej: f.imej ?? null, susunan: f.susunan ?? 1 }))
+      await ubah((s) => s.simpan('buku_seksyen', { id: f.id, tajuk: f.tajuk!.trim(), isi: f.isi?.trim() || null, imej: f.imej ?? null, susunan: f.susunan ?? 1, bidang_id: f.bidang_id ?? null }))
       tutup()
     } catch (e) { setRalat((e as Error).message) } finally { setSibuk(false) }
   }
   return (
     <Modal buka tutup={tutup} tajuk={x.id ? 'Sunting seksyen' : 'Seksyen baharu'} lebar="max-w-3xl">
       <div className="space-y-4">
-        <div><label className="label">Tajuk</label><input autoFocus className="input" value={f.tajuk ?? ''} onChange={(e) => setF({ ...f, tajuk: e.target.value })} placeholder="cth. Sejarah Sekolah" /></div>
+        <div className="grid sm:grid-cols-[1fr_240px] gap-3">
+          <div><label className="label">Tajuk</label><input autoFocus className="input" value={f.tajuk ?? ''} onChange={(e) => setF({ ...f, tajuk: e.target.value })} placeholder="cth. Sejarah Sekolah" /></div>
+          <div><label className="label">Letak dalam bab</label>
+            <select className="input" value={f.bidang_id ?? ''} onChange={(e) => setF({ ...f, bidang_id: e.target.value || null })}>
+              <option value="">Bahagian A: Pengenalan</option>
+              {bidang.map((b) => <option key={b.id} value={b.id}>Bab {b.nama}</option>)}
+            </select></div>
+        </div>
         <div>
           <label className="label">Isi</label>
           <textarea rows={14} className="input font-[Arial,sans-serif] leading-relaxed" value={f.isi ?? ''} onChange={(e) => setF({ ...f, isi: e.target.value })}
